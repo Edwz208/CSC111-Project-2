@@ -83,15 +83,20 @@ class Graph:
             
     def get_all_attribute(self, i: int, anime_data: str) -> set:
         """
-        this function will collect all the attributes in given index in a set.
-        Raise a ValuError if index is not in
+        This function will collect all the attributes in given index in a set.
+        Raise a ValuError if the index doesn't make sense.
+                - uid = row[0]
+                - title = row[1]
+                - genre = row[3]
+                - popularity = row[7]
+                - score = row[9]
         """
         with open(anime_data) as file:
             reader = csv.reader(file)
 
             wanted = set()
             for row in reader:
-                wanted.add(row[i]) 
+                wanted.add(row[i])
             return wanted
 
     def load_review_graph(anime_data: str) -> Graph:
@@ -99,7 +104,7 @@ class Graph:
 
         Graph stores a vertex for each show and attributes in the datasets.
         Each vertex stores as its item either a show title or attributes.
-        The show title vertices can not have an edge betwen them, nor can attribute vertices;
+        The show title vertices can not have an edge between them, nor can attribute vertices;
         A show vertex and an attribute vertex can have an edge between them.
         Use the "kind" _Vertex attribute to differentiate between different vertex types.
 
@@ -124,17 +129,16 @@ class Graph:
             for row in reader:
                 uid = row[0]
                 title = row[1]
-                synopsis = row[2]
                 genre = row[3]
                 popularity = row[7]
                 score = row[9]
 
                 shows[uid] = title
 
-                show_attribute_graph.add_vertex(synopsis, "synopsis")
                 show_attribute_graph.add_vertex(genre, "genre")
                 show_attribute_graph.add_vertex(popularity, "popularity")
                 show_attribute_graph.add_vertex(score, "score")
                 show_attribute_graph.add_edge(shows[uid], popularity)
 
         return show_attribute_graph
+
