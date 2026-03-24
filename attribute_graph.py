@@ -83,6 +83,19 @@ class Graph:
             v2.neighbours.add(v1)
         else:
             raise ValueError
+            
+    def get_all_attribute(self, i: int, anime_data: str) -> set:
+        """
+        this function will collect all the attributes in given index in a set.
+        Raise a ValuError if index is not in
+        """
+        with open(anime_data) as file:
+            reader = csv.reader(file)
+
+            wanted = set()
+            for row in reader:
+                wanted.add(row[i]) 
+            return wanted
 
     def load_review_graph(anime_data: str) -> Graph:
         """Return a show-attribute relationship graph corresponding to the given datasets.
@@ -99,7 +112,7 @@ class Graph:
         Preconditions:
             - anime_data is the path to a CSV file corresponding to the relevant anime data.
 
-        >>> g = load_review_graph('data/reviews_small.csv', 'data/book_names.csv')
+        >>> g = load_review_graph('data/reviews_small.csv')
         >>> user1_reviews = g.get_neighbours('user1')
         >>> "Harry Potter and the Sorcerer's Stone (Book 1)" in user1_reviews
         True
@@ -120,7 +133,6 @@ class Graph:
                 score = row[9]
 
                 shows[uid] = title
-
 
                 show_attribute_graph.add_vertex(synopsis, "synopsis")
                 show_attribute_graph.add_vertex(genre, "genre")
