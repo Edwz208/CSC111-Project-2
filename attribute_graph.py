@@ -121,8 +121,7 @@ class Graph:
 
                 shows[uid] = title
 
-                ## okay I just realized it doesn't make sense to write kind tags ad the name of the attribute
-                ## I'm thinking about making a dictionary, I'll think about it.
+
                 show_attribute_graph.add_vertex(synopsis, "synopsis")
                 show_attribute_graph.add_vertex(genre, "genre")
                 show_attribute_graph.add_vertex(popularity, "popularity")
