@@ -41,3 +41,19 @@ class _Vertex:
         self.item = item
         self.kind = kind
         self.neighbours = set()
+
+
+
+    class Graph:
+        """A graph used to represent show-attribute relationship.
+        """
+        
+        # Private Instance Attributes:
+        #     - _vertices:
+        #         A collection of the vertices contained in this graph.
+        #         Maps item to _Vertex object.
+        _vertices: dict[Any, _Vertex]
+
+        def __init__(self) -> None:
+            """Initialize an empty graph (no vertices or edges)."""
+            self._vertices = {}
