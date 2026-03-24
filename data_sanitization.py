@@ -1,6 +1,7 @@
 from __future__ import annotations
 import csv
 from typing import Any
+import ast
 
 
 def clean_anime(anime_file) -> list[dict[str, Any]]:
@@ -24,7 +25,8 @@ def clean_anime(anime_file) -> list[dict[str, Any]]:
 def clean_profiles(profiles_file) -> list[dict[str, Any]]:
     """
     Return a list of user profiles, with each one being a dictionary mapping of its attributes
-    Currently does not sanitize, just returns the list from csv file
+    Gets rid of duplicate user profiles, duplicate anime ids within a favourite anime list, and skips users entirely
+    if the user has invalid anime id.
     """
     user_list = []
     user_ids = set()
@@ -32,8 +34,21 @@ def clean_profiles(profiles_file) -> list[dict[str, Any]]:
         reader = csv.reader(file)
         next(reader)
         for row in reader:
-            if row[0] not in user_ids:
-                user_list.append({"profile": row[0], "favourite_anime": [row[3]]})
+            user_id = row[0]
+            user_favourites = ast.literal_eval(row[3])
+            anime_ids = set()
+            favourites_clean = []
+            for i in range(len(user_favourites)):
+                try:
+                    if user_favourites[i] not in anime_ids:  # skip duplicate anime ids
+                        anime_ids.add(user_favourites[i])
+                        favourites_clean.append(int(user_favourites[i]))
+                except ValueError:
+                    favourites_clean = []
+                    break  # skip this user
+            if user_id not in user_ids and favourites_clean != []:
+                user_list.append({"profile": user_id, "favourite_anime": favourites_clean})
+                user_ids.add(user_id)
     return user_list
 
 
