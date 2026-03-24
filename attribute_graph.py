@@ -44,28 +44,23 @@ class _Vertex:
         self.kind = kind
         self.neighbours = set()
 
+class Graph:
+    """A graph used to represent show-attribute relationship.
+    """
+    # Private Instance Attributes:
+    #     - _vertices:
+    #         A collection of the vertices contained in this graph.
+    #         Maps item to _Vertex object.
+    _vertices: dict[Any, _Vertex]
 
+    def __init__(self) -> None:
+        """Initialize an empty graph (no vertices or edges)."""
+        self._vertices = {}
 
-    class Graph:
-        """A graph used to represent show-attribute relationship.
-        """
-        
-        # Private Instance Attributes:
-        #     - _vertices:
-        #         A collection of the vertices contained in this graph.
-        #         Maps item to _Vertex object.
-        _vertices: dict[Any, _Vertex]
-
-        def __init__(self) -> None:
-            """Initialize an empty graph (no vertices or edges)."""
-            self._vertices = {}
-
-            def add_vertex(self, item: Any, kind: str) -> None:
+    def add_vertex(self, item: Any, kind: str) -> None:
         """Add a vertex with the given item and kind to this graph.
-
         The new vertex is not adjacent to any other vertices.
         Do nothing if the given item is already in this graph.
-
         Preconditions:
             - kind in {'show', 'attribute'}
         """
@@ -125,10 +120,10 @@ class _Vertex:
                 score = row[9]
 
                 shows[uid] = title
-                
+
                 ## okay I just realized it doesn't make sense to write kind tags ad the name of the attribute
                 ## I'm thinking about making a dictionary, I'll think about it.
-                show_attribute_graph.add_vertex(synopsis, "synopsis") 
+                show_attribute_graph.add_vertex(synopsis, "synopsis")
                 show_attribute_graph.add_vertex(genre, "genre")
                 show_attribute_graph.add_vertex(popularity, "popularity")
                 show_attribute_graph.add_vertex(score, "score")
