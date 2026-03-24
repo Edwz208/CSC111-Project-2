@@ -9,12 +9,9 @@ class _Vertex:
     """A vertex in an anime show data graph, used to represent a show or an attribute.
     Each vertex item is either a show title or an attribute.
     Attributes will be:
-    -uid
-    -synopsis
     - genre
     - studio
     - popularity
-    - episode count
     - score
     Both show title and attributes are represented as strings.
 
