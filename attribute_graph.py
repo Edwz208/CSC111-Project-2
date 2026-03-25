@@ -10,20 +10,19 @@ class _Vertex:
     Each vertex item is either a show title or an attribute.
     Attributes will be:
     - genre
-    - studio
     - popularity
     - score
     Both show title and attributes are represented as strings.
 
     Instance Attributes:
         - title: The data stored in this vertex representing a show, or an attribute.
-        - kind: The type of this vertex: 'attribute' or 'show'.
+        - kind: The type of this vertex: 'attribute name' or 'show'.
         - neighbours: The vertices that are adjacent to this vertex.
 
     Representation Invariants:
         - self not in self.neighbours
         - all(self in u.neighbours for u in self.neighbours)
-        - self.kind in {'attribute', 'show'}
+        - self.kind in {'title', 'genre', 'popularity', 'score'}
     """
     item: Any
     kind: str
@@ -35,11 +34,12 @@ class _Vertex:
         This vertex is initialized with no neighbours.
 
         Preconditions:
-            - kind in {'attribute', 'show'}
+            - kind in {'title', 'genre', 'popularity', 'score'}
         """
         self.item = item
         self.kind = kind
         self.neighbours = set()
+
 
 class Graph:
     """A graph used to represent show-attribute relationship.
@@ -59,7 +59,7 @@ class Graph:
         The new vertex is not adjacent to any other vertices.
         Do nothing if the given item is already in this graph.
         Preconditions:
-            - kind in {'show', 'attribute'}
+            - kind in {'title', 'genre', 'popularity', 'score'}
         """
         if item not in self._vertices:
             self._vertices[item] = _Vertex(item, kind)
@@ -80,11 +80,24 @@ class Graph:
             v2.neighbours.add(v1)
         else:
             raise ValueError
-            
+
+    def get_neighbours(self, item: Any) -> set:
+        """Return a set of the neighbours of the given item.
+
+        Note that the *items* are returned, not the _Vertex objects themselves.
+
+        Raise a ValueError if item does not appear as a vertex in this graph.
+        """
+        if item in self._vertices:
+            v = self._vertices[item]
+            return {neighbour.item for neighbour in v.neighbours}
+        else:
+            raise ValueError
+
     def get_all_attribute(self, i: int, anime_data: str) -> set:
         """
-        This function will collect all the attributes in given index in a set.
-        Raise a ValuError if the index doesn't make sense.
+        this function will collect all the attributes in given index in a set.
+        Raise a ValuError if index doesn't make sense.
                 - uid = row[0]
                 - title = row[1]
                 - genre = row[3]
@@ -99,46 +112,63 @@ class Graph:
                 wanted.add(row[i])
             return wanted
 
-    def load_review_graph(anime_data: str) -> Graph:
-        """Return a show-attribute relationship graph corresponding to the given datasets.
-
-        Graph stores a vertex for each show and attributes in the datasets.
-        Each vertex stores as its item either a show title or attributes.
-        The show title vertices can not have an edge between them, nor can attribute vertices;
-        A show vertex and an attribute vertex can have an edge between them.
-        Use the "kind" _Vertex attribute to differentiate between different vertex types.
-
-        Edges represent the relationship between a show and an attribute. In this graph, each edge
-        only represents the existence of a relation.
-
-        Preconditions:
-            - anime_data is the path to a CSV file corresponding to the relevant anime data.
-
-        >>> g = load_review_graph('data/reviews_small.csv')
-        >>> user1_reviews = g.get_neighbours('user1')
-        >>> "Harry Potter and the Sorcerer's Stone (Book 1)" in user1_reviews
-        True
+    def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
+        """Convert this graph into a networkx Graph.
+        max_vertices specifies the maximum number of vertices that can appear in the graph.
+        (This is necessary to limit the visualization output for large graphs.)
+        Note that this method is provided for you, and you shouldn't change it.
         """
+        graph_nx = nx.Graph()
+        for v in self._vertices.values():
+            graph_nx.add_node(v.item, kind=v.kind)
+            for u in v.neighbours:
+                if graph_nx.number_of_nodes() < max_vertices:
+                    graph_nx.add_node(u.item, kind=u.kind)
 
-        show_attribute_graph = Graph()
+                if u.item in graph_nx.nodes:
+                    graph_nx.add_edge(v.item, u.item)
+            if graph_nx.number_of_nodes() >= max_vertices:
+                break
 
-        shows = {}
+        return graph_nx
 
-        with open(anime_data) as file:
-            reader = csv.reader(file)
-            for row in reader:
-                uid = row[0]
-                title = row[1]
-                genre = row[3]
-                popularity = row[7]
-                score = row[9]
 
-                shows[uid] = title
+def load_the_graph(anime_data: str) -> Graph:
+    """Return a show-attribute relationship graph corresponding to the given datasets.
+    Graph stores a vertex for each show and attributes in the datasets.
+    Each vertex stores as its item either a show title or attributes.
+    The show title vertices can not have an edge betwen them, nor can attribute vertices;
+    A show vertex and an attribute vertex can have an edge between them.
+    Use the "kind" _Vertex attribute to differentiate between different vertex types.
+    Edges represent the relationship between a show and an attribute. In this graph, each edge
+    only represents the existence of a relation.
+    Preconditions:
+        - anime_data is the path to a CSV file corresponding to the relevant anime data.
+    >>> g = load_the_graph('anime_data_small.csv')
+    >>> user1_reviews = g.get_neighbours('user1')
+    >>> "Harry Potter and the Sorcerer's Stone (Book 1)" in user1_reviews
+    True
+    """
+    show_attribute_graph = Graph()
+    shows = {}
+    with open(anime_data) as file:
+        reader = csv.reader(file)
+        for row in reader:
+            uid = row[0]
+            title = row[1]
+            genre = row[3]
+            popularity = row[7]
+            score = row[9]
+            shows[uid] = title
+            show_attribute_graph.add_vertex(title, "title")
+            show_attribute_graph.add_vertex(genre, "genre")
+            show_attribute_graph.add_vertex(popularity, "popularity")
+            show_attribute_graph.add_vertex(score, "score")
 
-                show_attribute_graph.add_vertex(genre, "genre")
-                show_attribute_graph.add_vertex(popularity, "popularity")
-                show_attribute_graph.add_vertex(score, "score")
-                show_attribute_graph.add_edge(shows[uid], popularity)
+            show_attribute_graph.add_edge(title, genre)
+            show_attribute_graph.add_edge(title, popularity)
+            show_attribute_graph.add_edge(title, score)
 
         return show_attribute_graph
+
 
