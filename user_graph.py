@@ -1,6 +1,6 @@
+"""Module imports"""
 from __future__ import annotations
-from typing import Any
-from data_sanitization import clean_profiles, get_anime_id_title_map
+import data_sanitization
 
 
 class _Vertex:
@@ -130,7 +130,7 @@ class Graph:
         else:
             return set(self._vertices.keys())
 
-    def get_similarity_score(self, item1: Any, item2: Any) -> float:
+    def get_similarity_score(self, item1: str, item2: str) -> float:
         """Return the similarity score between the two given items in this graph.
 
         Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
@@ -187,7 +187,7 @@ class Graph:
             if sim_score != 0 and user_id != "inputted_user":
                 neighbour_users_to_score.append((user_id, sim_score))
         neighbour_users_to_score.sort(key=lambda x: x[1], reverse=True)
-        top_users = {username: score for username, score in neighbour_users_to_score[:limit_users]}
+        top_users = dict(neighbour_users_to_score[:limit_users])
         top_anime = set()
         for username in top_users:
             top_anime = top_anime.union(self.get_neighbours(username))
@@ -222,8 +222,8 @@ def load_user_graph(user_file: str, anime_file: str) -> Graph:
     True
     """
     g = Graph()
-    user_map = clean_profiles(user_file)
-    anime_map = get_anime_id_title_map(anime_file, user_map)
+    user_map = data_sanitization.clean_profiles(user_file)
+    anime_map = data_sanitization.get_anime_id_title_map(anime_file, user_map)
     for user in user_map:
         g.add_vertex(user, "user")
         for anime in user_map[user]:
@@ -235,18 +235,17 @@ def load_user_graph(user_file: str, anime_file: str) -> Graph:
 
 
 if __name__ == '__main__':
-    pass
-    # import python_ta.contracts
-    # python_ta.contracts.check_all_contracts()
-    #
-    # import doctest
-    # doctest.testmod()
-    #
-    # import python_ta
-    # python_ta.check_all(config={
-    #     'max-line-length': 120,
-    #     'disable': ['static_type_checker'],
-    #     'extra-imports': ['csv', 'networkx'],
-    #     'allowed-io': ['load_review_graph'],
-    #     'max-nested-blocks': 4
-    # })
+    import python_ta.contracts
+    python_ta.contracts.check_all_contracts()
+
+    import doctest
+    doctest.testmod()
+
+    import python_ta
+    python_ta.check_all(config={
+        'max-line-length': 120,
+        'disable': ['static_type_checker'],
+        'extra-imports': ['csv', 'networkx', 'data_sanitization'],
+        'allowed-io': ['load_review_graph'],
+        'max-nested-blocks': 4
+    })
