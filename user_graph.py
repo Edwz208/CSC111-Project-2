@@ -153,7 +153,7 @@ class Graph:
 
     def recommend_anime(self, inputted_anime: list[str], limit_anime: int, limit_users: int) -> list[str]:
         """Return a list of up to <limit> recommended anime based on similarity to the given user based on the inputted
-        list of anime. It takes the top anime from the top limit_users in similarity scores and then gives each one a 
+        list of anime. It takes the top anime from the top limit_users in similarity scores and then gives each one a
         new score by accumulating sim_score from user for every user that watched the anime.
 
         The return value is a list of the titles of recommended books, sorted in
@@ -175,23 +175,30 @@ class Graph:
             - limit >= 1
             - all(anime in self._vertices for anime in inputted_anime)
         """
-        # neighbour_users_to_score = []
-        # self.delete_vertex("inputted_user")
-        # self.add_vertex("inputted_user", "user")
-        # for anime in inputted_anime:
-        #     self.add_edge("inputted_user", anime)
-        #
-        # for user_id in self.get_all_vertices(kind='user'):
-        #     sim_score = self.get_similarity_score(user_id, "inputted_user")
-        #     if sim_score != 0 and user_id != "inputted_user":
-        #         neighbour_users_to_score.append((user_id, sim_score))
-        # neighbour_users_to_score.sort(key=lambda x: x[1], reverse=True)
-        # top_users = [username for username, score in neighbour_users_to_score[:limit_users]]
-        #
-        # for user in top_users:
-        #     top_anime.extend(self.get_neighbours(user))
-        # top_anime = set(top_anime)
-        # for anime in top_anime:
+        # Create a user based on inputted anime
+        self.delete_vertex("inputted_user")
+        self.add_vertex("inputted_user", "user")
+        for anime in inputted_anime:
+            self.add_edge("inputted_user", anime)
+
+        neighbour_users_to_score = []
+        for user_id in self.get_all_vertices(kind='user'):
+            sim_score = self.get_similarity_score(user_id, "inputted_user")
+            if sim_score != 0 and user_id != "inputted_user":
+                neighbour_users_to_score.append((user_id, sim_score))
+        neighbour_users_to_score.sort(key=lambda x: x[1], reverse=True)
+        top_users = {username: score for username, score in neighbour_users_to_score[:limit_users]}
+        top_anime = set()
+        for username in top_users:
+            top_anime = top_anime.union(self.get_neighbours(username))
+
+        anime_new_score = []
+        for anime in top_anime:
+            for user in self.get_neighbours(anime):
+                if user in top_users:
+                    anime_new_score.append((anime, top_users[user]))
+        anime_new_score.sort(key=lambda x: x[1], reverse=True)
+        return anime_new_score[:limit_anime]
 
 
 def load_user_graph(user_file: str, anime_file: str) -> Graph:
