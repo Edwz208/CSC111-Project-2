@@ -1,4 +1,3 @@
-
 """Module imports (docstring required)?"""
 from __future__ import annotations
 import data_sanitization
