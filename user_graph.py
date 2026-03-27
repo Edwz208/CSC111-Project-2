@@ -1,7 +1,7 @@
 """Module imports (docstring required)?"""
 from __future__ import annotations
 import data_sanitization
-
+import networkx as nx
 
 class _Vertex:
     """A vertex in a graph, used to represent a user or an anime.
@@ -205,6 +205,30 @@ class Graph:
         return [anime for anime, score in sorted_anime[:limit_anime]]
 
 
+
+    def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
+        """Convert this graph into a networkx Graph. Copied from CSC111 A3 handout.
+
+        max_vertices specifies the maximum number of vertices that can appear in the graph.
+        (This is necessary to limit the visualization output for large graphs.)
+
+        """
+        graph_nx = nx.Graph()
+        for v in self._vertices.values():
+            graph_nx.add_node(v.item, kind=v.kind)
+
+            for u in v.neighbours:
+                if graph_nx.number_of_nodes() < max_vertices:
+                    graph_nx.add_node(u.item, kind=u.kind)
+
+                if u.item in graph_nx.nodes:
+                    graph_nx.add_edge(v.item, u.item)
+
+            if graph_nx.number_of_nodes() >= max_vertices:
+                break
+
+        return graph_nx
+
 def load_user_graph(user_file: str, anime_file: str) -> Graph:
     """Return a user and anime graph corresponding to the given datasets. Note: the graph loads
     every single anime that has at least one user who favourited it.
@@ -256,3 +280,4 @@ if __name__ == '__main__':
         'allowed-io': ['load_review_graph'],
         'max-nested-blocks': 4
     })
+
