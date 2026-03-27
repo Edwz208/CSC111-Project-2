@@ -1,8 +1,8 @@
-"""Module imports"""
+
+"""Module imports (docstring required)?"""
 from __future__ import annotations
 import data_sanitization
 import networkx as nx
-
 
 class _Vertex:
     """A vertex in a graph, used to represent a user or an anime.
@@ -154,7 +154,7 @@ class Graph:
 
     def recommend_anime(self, inputted_anime: list[str], limit_anime: int, limit_users: int) -> list[str]:
         """Return a list of up to <limit> recommended anime based on similarity to the given user based on the inputted
-        list of anime. It takes the top anime from the top limit_users in similarity scores and then gives each one a
+        list of anime titles. It takes the top anime from the top limit_users in similarity scores and then gives each one a
         new score by accumulating sim_score from user for every user that watched the anime.
 
         The return value is a list of the titles of recommended books, sorted in
@@ -192,14 +192,20 @@ class Graph:
         top_anime = set()
         for username in top_users:
             top_anime = top_anime.union(self.get_neighbours(username))
-
-        anime_new_score = []
+        anime_to_score = {}
+        top_anime.difference_update(set(inputted_anime))
         for anime in top_anime:
-            for user in self.get_neighbours(anime):
-                if user in top_users:
-                    anime_new_score.append((anime, top_users[user]))
-        anime_new_score.sort(key=lambda x: x[1], reverse=True)
-        return anime_new_score[:limit_anime]
+            if anime not in inputted_anime:
+                total_score = 0
+                for user in self.get_neighbours(anime):
+                    if user in top_users:
+                        total_score += top_users[user]
+                if total_score > 0:
+                    anime_to_score[anime] = total_score
+        sorted_anime = sorted(anime_to_score.items(), key=lambda x: x[1], reverse=True)
+        return [anime for anime, score in sorted_anime[:limit_anime]]
+
+
 
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
         """Convert this graph into a networkx Graph. Copied from CSC111 A3 handout.
@@ -223,7 +229,6 @@ class Graph:
                 break
 
         return graph_nx
-
 
 def load_user_graph(user_file: str, anime_file: str) -> Graph:
     """Return a user and anime graph corresponding to the given datasets. Note: the graph loads
@@ -251,7 +256,10 @@ def load_user_graph(user_file: str, anime_file: str) -> Graph:
     for user in user_map:
         g.add_vertex(user, "user")
         for anime in user_map[user]:
-            anime_title = anime_map[anime]
+            try:
+                anime_title = anime_map[anime]
+            except KeyError:
+                continue
             g.add_vertex(anime_title, "anime")
             g.add_edge(user, anime_title)
 
@@ -273,3 +281,4 @@ if __name__ == '__main__':
         'allowed-io': ['load_review_graph'],
         'max-nested-blocks': 4
     })
+

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from user_graph import load_user_graph
 
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel,
-                               QPushButton, QFormLayout, QLineEdit, QErrorMessage)
+from PySide6.QtWidgets import*
 from PySide6.QtGui import QFont, QPixmap
 import sys
 import networkx as nx
@@ -62,20 +61,20 @@ class MainWindow(QMainWindow):
 
         # HARD CODED VALUES FOR LIMITS RN
         try:
+            # adds button to window
             inputted_user_graph = load_user_graph('profiles.csv', 'animes.csv')
             user_recs = inputted_user_graph.recommend_anime(list_of_anime, 50, 20)
 
             for anime in user_recs:
                 user_recommendations = QLabel(anime)
-                user_recommendations.setFont(QFont('Helvetica', 12))
+                user_recommendations.setFont(QFont('Helvetica', 8))
                 self.main_layout.addWidget(user_recommendations)
 
             # visualize using networkx --> WILL MAKE BETTER LOOKING
-            inputted_user_graph.to_networkx()
-            nx.draw(inputted_user_graph, with_labels=True, node_color='pink', edge_color='#FC809F', node_size=1200, font_size=12)
+            g = inputted_user_graph.to_networkx(200)
+            nx.draw(g, with_labels=True, node_color='pink', edge_color='#FC809F', node_size=1200, font_size=12)
             plt.savefig('data/graph.png')
 
-            # adds button to window
             btn_visualize = QPushButton('Visualize recommendations')
             self.main_layout.addWidget(btn_visualize)
             btn_visualize.clicked.connect(self._visualize)
@@ -84,6 +83,12 @@ class MainWindow(QMainWindow):
             error_dialog = QErrorMessage()
             error_dialog.showMessage('Your input was not accepted. Please try again.')
             error_dialog.exec()
+
+        except ValueError:
+            error_dialog = QErrorMessage()
+            error_dialog.showMessage('Your input was not accepted. Please try again.')
+            error_dialog.exec()
+
 
     def _visualize(self) -> None:
         new_label = QLabel(self)
