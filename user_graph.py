@@ -1,6 +1,7 @@
 """Module imports"""
 from __future__ import annotations
 import data_sanitization
+import networkx as nx
 
 
 class _Vertex:
@@ -199,6 +200,29 @@ class Graph:
                     anime_new_score.append((anime, top_users[user]))
         anime_new_score.sort(key=lambda x: x[1], reverse=True)
         return anime_new_score[:limit_anime]
+
+    def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
+        """Convert this graph into a networkx Graph. Copied from CSC111 A3 handout.
+
+        max_vertices specifies the maximum number of vertices that can appear in the graph.
+        (This is necessary to limit the visualization output for large graphs.)
+
+        """
+        graph_nx = nx.Graph()
+        for v in self._vertices.values():
+            graph_nx.add_node(v.item, kind=v.kind)
+
+            for u in v.neighbours:
+                if graph_nx.number_of_nodes() < max_vertices:
+                    graph_nx.add_node(u.item, kind=u.kind)
+
+                if u.item in graph_nx.nodes:
+                    graph_nx.add_edge(v.item, u.item)
+
+            if graph_nx.number_of_nodes() >= max_vertices:
+                break
+
+        return graph_nx
 
 
 def load_user_graph(user_file: str, anime_file: str) -> Graph:

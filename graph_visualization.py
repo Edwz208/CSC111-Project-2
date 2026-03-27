@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-import user_graph
+from user_graph import load_user_graph
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QFormLayout, QLineEdit
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel,
+                               QPushButton, QFormLayout, QLineEdit, QErrorMessage)
 from PySide6.QtGui import QFont, QPixmap
 import sys
 import networkx as nx
 import matplotlib.pyplot as plt
 
-class Window(QMainWindow):
+
+class MainWindow(QMainWindow):
     """The interactive text shell for the anime recommendation system.
     """
 
@@ -29,8 +31,8 @@ class Window(QMainWindow):
 
         # labels
         self.title = QLabel('Anime Recommendations')
-        self.title.setStyleSheet('color: pink')
-        self.title.setFont(QFont('Times New Roman', 32))
+        self.title.setStyleSheet('color: #FC809F')
+        self.title.setFont(QFont('Comic Sans MS', 32))
         self.main_layout.addWidget(self.title)
 
         self.instructions = QLabel('Enter a list of at least five anime to receive personalized recommendations!')
@@ -54,21 +56,34 @@ class Window(QMainWindow):
         self.btn_recommendations.clicked.connect(self.load_graph)
         self.btn_clear.clicked.connect(self.clear_form)
 
-    # MAKE GRAPH PRETTIER LOOKING
     def load_graph(self) -> None:
-        # loads a sample graph
+
         list_of_anime = self.anime_list_input.text().split(', ')
-        print(list_of_anime)
 
+        # HARD CODED VALUES FOR LIMITS RN
+        try:
+            inputted_user_graph = load_user_graph('profiles.csv', 'animes.csv')
+            user_recs = inputted_user_graph.recommend_anime(list_of_anime, 50, 20)
 
+            for anime in user_recs:
+                user_recommendations = QLabel(anime)
+                user_recommendations.setFont(QFont('Helvetica', 12))
+                self.main_layout.addWidget(user_recommendations)
 
-        # nx.draw(my_graph)
-        plt.savefig('data/graph.png')
+            # visualize using networkx --> WILL MAKE BETTER LOOKING
+            inputted_user_graph.to_networkx()
+            nx.draw(inputted_user_graph, with_labels=True, node_color='pink', edge_color='#FC809F', node_size=1200, font_size=12)
+            plt.savefig('data/graph.png')
 
-        # adds button to window
-        self.btn_visualize = QPushButton('Visualize recommendations')
-        self.main_layout.addWidget(self.btn_visualize)
-        self.btn_visualize.clicked.connect(self._visualize)
+            # adds button to window
+            btn_visualize = QPushButton('Visualize recommendations')
+            self.main_layout.addWidget(btn_visualize)
+            btn_visualize.clicked.connect(self._visualize)
+
+        except KeyError:
+            error_dialog = QErrorMessage()
+            error_dialog.showMessage('Your input was not accepted. Please try again.')
+            error_dialog.exec()
 
     def _visualize(self) -> None:
         new_label = QLabel(self)
@@ -87,6 +102,6 @@ def load_stylesheet(app: QApplication) -> None:
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     load_stylesheet(app)
-    window = Window()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
