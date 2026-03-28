@@ -75,8 +75,11 @@ def get_anime_id_title_map(anime_file: str, user_map: dict[str, list[int]] | dic
     df = pd.read_csv(anime_file)
     anime_map = {}
     for _, row in df.iterrows():
-        anime_id = int(row['uid'])
-        title = row['title']
+        try:
+            anime_id = int(row['uid'])
+            title = str(row['title'])
+        except ValueError:
+            continue
         if anime_id not in anime_map and anime_id in anime_ids_from_user:
             anime_map[anime_id] = title
     return anime_map
@@ -97,7 +100,7 @@ def clean_ratings(ratings_file: str) -> dict[str, list[tuple[int, int]]]:
         try:
             user_id = str(row['profile'])
             rating = int(row['score'])
-            anime_id = int(row['uid'])
+            anime_id = int(row['anime_uid'])
         except ValueError:
             continue
         if (user_id, anime_id) not in user_anime_id:
