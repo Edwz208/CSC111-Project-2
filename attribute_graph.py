@@ -40,6 +40,19 @@ class _Vertex:
         self.kind = kind
         self.neighbours = set()
 
+    def similarity_score(self, other: _Vertex) -> float:
+        """This function returns the similarity score between this and given vertex.
+        """
+
+        if not self.neighbours or not other.neighbours:
+            return 0
+
+        else:
+            intersection_calc = self.neighbours.intersection(other.neighbours)
+            union_calc = self.neighbours.union(other.neighbours)
+
+            return len(intersection_calc) / len(union_calc)
+
 
 class Graph:
     """A graph used to represent show-attribute relationship.
@@ -112,6 +125,19 @@ class Graph:
                 wanted.add(row[i])
             return wanted
 
+    def get_all_vertices(self, kind: str = '') -> set:
+        """The function will return a set of all vertex items of the given kind.
+
+        Raise ValueError if kind is not given.
+
+        Preconditions:
+            - self.kind in {'title', 'genre', 'popularity', 'score'}
+        """
+        if kind == '':
+            return set(self._vertices.keys())
+        else:
+            return {v.item for v in self._vertices.values() if v.kind == kind}
+
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
         """Convert this graph into a networkx Graph.
         max_vertices specifies the maximum number of vertices that can appear in the graph.
@@ -132,6 +158,67 @@ class Graph:
 
         return graph_nx
 
+    def get_similarity_score(self, item1: Any, item2: Any) -> float:
+        """Return the similarity score between the two given items in this graph.
+
+        Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
+
+        >>> g = Graph()
+        >>> for i in range(0, 6):
+        ...     g.add_vertex(str(i), kind='user')
+        >>> g.add_edge('0', '2')
+        >>> g.add_edge('0', '3')
+        >>> g.add_edge('0', '4')
+        >>> g.add_edge('1', '3')
+        >>> g.add_edge('1', '4')
+        >>> g.add_edge('1', '5')
+        >>> g.get_similarity_score('0', '1')
+        0.5
+        """
+        if item1 not in self._vertices or item2 not in self._vertices:
+            raise ValueError
+
+        else:
+            return self._vertices[item1].similarity_score(self._vertices[item2])
+
+    def recommend_new_show(self, show: str) -> list[str]:
+        """
+        this function will be returning a list of recommended show based on the similarity of the input show
+
+        The returned list should NOT contain:
+            - the given show
+            - any duplicates
+
+        The returned list should contain:
+            - list of shows with at least similarity score of 1
+
+
+        The list will start with the book with the highest similarity score.
+
+        Preconditions:
+            - show in self._vertices
+            - self._vertices[show].kind == 'title'
+            - len(recommendation_list) => 1
+        """
+
+        all_shows = self.get_all_vertices(kind="title")
+        all_shows.remove(show)
+
+        scores_so_far = []
+
+        for the_show in all_shows:
+            score = self.get_similarity_score(the_show, show)
+            if score > 0:
+                scores_so_far.append((score, the_show))
+
+        scores_so_far.sort(reverse=True)
+
+        recommendation_list = []
+        for score, title in scores_so_far:
+            recommendation_list.append(title)
+
+        return recommendation_list
+
 
 def load_the_graph(anime_data: str) -> Graph:
     """Return a show-attribute relationship graph corresponding to the given datasets.
@@ -144,10 +231,6 @@ def load_the_graph(anime_data: str) -> Graph:
     only represents the existence of a relation.
     Preconditions:
         - anime_data is the path to a CSV file corresponding to the relevant anime data.
-    >>> g = load_the_graph('anime_data_small.csv')
-    >>> user1_reviews = g.get_neighbours('user1')
-    >>> "Harry Potter and the Sorcerer's Stone (Book 1)" in user1_reviews
-    True
     """
     show_attribute_graph = Graph()
     shows = {}
