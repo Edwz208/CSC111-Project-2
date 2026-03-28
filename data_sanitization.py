@@ -57,14 +57,19 @@ def clean_profiles(profiles_file: str) -> dict[str, list[int]]:
     return user_map
 
 
-def get_anime_id_title_map(anime_file: str, user_map: dict[str, list[int]]) -> dict[int, str]:
+def get_anime_id_title_map(anime_file: str, user_map: dict[str, list[int]] | dict[str, list[tuple[int, int]]]) -> dict[int, str]:
     """
     Return a dictionary mapping an anime integer id to its string title. It skips duplicates of an anime and filters out
-    anime which are not in a list of favourite from the users
+    anime which are not in a list of favourite from the users. It takes in two variations of user_map data to support
+    both weighted and unweighted graphs.
     """
     anime_ids_from_user = set()
     for username in user_map:
-        for anime in user_map[username]:
+        for item in user_map[username]:
+            if isinstance(item, tuple):
+                anime = item[0]
+            else:
+                anime = item
             anime_ids_from_user.add(anime)
 
     df = pd.read_csv(anime_file)
@@ -75,6 +80,36 @@ def get_anime_id_title_map(anime_file: str, user_map: dict[str, list[int]]) -> d
         if anime_id not in anime_map and anime_id in anime_ids_from_user:
             anime_map[anime_id] = title
     return anime_map
+
+
+def clean_ratings(ratings_file: str) -> dict[str, list[tuple[int, int]]]:
+    """
+    Return a mapping of user ratings to the anime they reviewed.
+    Gets rid of duplicate user to anime pairings within a rating list from a user, and skips any rating
+    if the user has rated a non-integer anime id. It also gets rid of all users who have less than the minimum number of
+    reviews required.
+    """
+    user_map = {}
+    USER_MINIMUM_REVIEWS = 2
+    df = pd.read_csv(ratings_file)
+    user_anime_id = set()
+    for _, row in df.iterrows():
+        try:
+            user_id = str(row['profile'])
+            rating = int(row['score'])
+            anime_id = int(row['uid'])
+        except ValueError:
+            continue
+        if (user_id, anime_id) not in user_anime_id:
+            if user_id not in user_map:
+                user_map[user_id] = []
+            user_map[user_id].append((anime_id, rating))
+            user_anime_id.add((user_id, anime_id))
+    filtered_user_map = {}
+    for user in user_map:
+        if len(user_map[user]) >= USER_MINIMUM_REVIEWS:
+            filtered_user_map[user] = user_map[user]
+    return filtered_user_map
 
 
 def remove_under_favourites_lower_bound(list_of_users: dict[str, list[int]], limit: int) -> dict[str, list[int]]:
@@ -93,3 +128,17 @@ if __name__ == "__main__":
     user_mapping = clean_profiles("data/profiles_small.csv")
     print(user_mapping)
     print(get_anime_id_title_map("data/animes_small.csv", user_mapping))
+    # import python_ta.contracts
+    # python_ta.contracts.check_all_contracts()
+    #
+    # import doctest
+    # doctest.testmod()
+    #
+    # import python_ta
+    # python_ta.check_all(config={
+    #     'max-line-length': 120,
+    #     'disable': ['static_type_checker'],
+    #     'extra-imports': ['csv', 'networkx'],
+    #     'allowed-io': ['load_review_graph'],
+    #     'max-nested-blocks': 4
+    # })
