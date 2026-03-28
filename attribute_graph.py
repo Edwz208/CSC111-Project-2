@@ -12,10 +12,10 @@ class _Vertex:
     - genre
     - popularity
     - score
-    Both show title and attributes are represented as strings.
+    Both the show title and attributes are represented as strings.
 
     Instance Attributes:
-        - title: The data stored in this vertex representing a show, or an attribute.
+        - title: The data stored in this vertex represents a show, or an attribute.
         - kind: The type of this vertex: 'attribute name' or 'show'.
         - neighbours: The vertices that are adjacent to this vertex.
 
@@ -42,6 +42,7 @@ class _Vertex:
 
     def similarity_score(self, other: _Vertex) -> float:
         """This function returns the similarity score between this and given vertex.
+
         """
 
         if not self.neighbours or not other.neighbours:
@@ -84,6 +85,14 @@ class Graph:
 
         Preconditions:
             - item1 != item2
+
+        >>> graph = Graph()
+        >>> graph.add_vertex("Sailor Moon", "Title")
+        >>> graph.add_vertex("Mahou Shoujo", "genre")
+        >>> graph.add_edge("Sailor Moon", "Mahou Shoujo")
+        >>> "Mahou Shoujo" in graph.get_neighbours("Sailor Moon")
+        True
+
         """
         if item1 in self._vertices and item2 in self._vertices:
             v1 = self._vertices[item1]
@@ -132,6 +141,12 @@ class Graph:
 
         Preconditions:
             - self.kind in {'title', 'genre', 'popularity', 'score'}
+
+        >>> le_graph = Graph()
+        >>> le_graph.add_vertex("Sailor Moon", "Title")
+        >>> le_graph.add_vertex("Mahou Shoujo", "genre")
+        >>> le_graph.get_all_vertices("Title")
+        {'Sailor Moon'}
         """
         if kind == '':
             return set(self._vertices.keys())
@@ -163,17 +178,21 @@ class Graph:
 
         Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
 
-        >>> g = Graph()
-        >>> for i in range(0, 6):
-        ...     g.add_vertex(str(i), kind='user')
-        >>> g.add_edge('0', '2')
-        >>> g.add_edge('0', '3')
-        >>> g.add_edge('0', '4')
-        >>> g.add_edge('1', '3')
-        >>> g.add_edge('1', '4')
-        >>> g.add_edge('1', '5')
-        >>> g.get_similarity_score('0', '1')
+
+        >>> le_graph = Graph()
+        >>> le_graph.add_vertex("Sailor Moon", "Title")
+        >>> le_graph.add_vertex("Mahou Shoujo", "genre")
+        >>> le_graph.add_vertex("Frieren", "Title")
+        >>> le_graph.add_vertex("action", "genre")
+        >>> le_graph.add_vertex("comedy", "genre")
+        >>> le_graph.add_vertex("Mob Psycho", "Title")
+        >>> le_graph.add_edge("Mob Psycho", "action")
+        >>> le_graph.add_edge("Mob Psycho", "comedy")
+        >>> le_graph.add_edge("Frieren", "action")
+        >>> le_graph.add_edge("Sailor Moon", "Mahou Shoujo")
+        >>> le_graph.get_similarity_score("Frieren", "Mob Psycho")
         0.5
+
         """
         if item1 not in self._vertices or item2 not in self._vertices:
             raise ValueError
@@ -254,4 +273,9 @@ def load_the_graph(anime_data: str) -> Graph:
 
         return show_attribute_graph
 
+
+if __name__ == '__main__':
+
+    import doctest
+    doctest.testmod()
 
