@@ -194,16 +194,14 @@ class Graph:
         anime_to_score = {}
         top_anime.difference_update(set(inputted_anime))
         for anime in top_anime:
-            if anime not in inputted_anime:
-                total_score = 0
-                for user in self.get_neighbours(anime):
-                    if user in top_users:
-                        total_score += top_users[user]
-                if total_score > 0:
-                    anime_to_score[anime] = total_score
+            total_score = 0
+            for user in self.get_neighbours(anime):
+                if user in top_users:
+                    total_score += top_users[user]
+            if total_score > 0:
+                anime_to_score[anime] = total_score
         sorted_anime = sorted(anime_to_score.items(), key=lambda x: x[1], reverse=True)
         return [anime for anime, score in sorted_anime[:limit_anime]]
-
 
 
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
@@ -228,6 +226,7 @@ class Graph:
                 break
 
         return graph_nx
+
 
 def load_user_graph(user_file: str, anime_file: str) -> Graph:
     """Return a user and anime graph corresponding to the given datasets. Note: the graph loads
