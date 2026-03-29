@@ -104,9 +104,7 @@ class Graph:
             raise ValueError
 
     def get_neighbours(self, item: Any) -> set:
-        """Return a set of the neighbours of the given item.
-
-        Note that the *items* are returned, not the _Vertex objects themselves.
+        """Return a set of the neighbours items of the given item.
 
         Raise a ValueError if item does not appear as a vertex in this graph.
         """
@@ -143,9 +141,9 @@ class Graph:
             - self.kind in {'title', 'genre', 'popularity', 'score'}
 
         >>> le_graph = Graph()
-        >>> le_graph.add_vertex("Sailor Moon", "Title")
+        >>> le_graph.add_vertex("Sailor Moon", "title")
         >>> le_graph.add_vertex("Mahou Shoujo", "genre")
-        >>> le_graph.get_all_vertices("Title")
+        >>> le_graph.get_all_vertices("title")
         {'Sailor Moon'}
         """
         if kind == '':
@@ -200,43 +198,70 @@ class Graph:
         else:
             return self._vertices[item1].similarity_score(self._vertices[item2])
 
-    def recommend_new_show(self, show: str) -> list[str]:
+    def recommend_new_show(self, show: str, limit_anime: int) -> dict[str, float]:
         """
-        this function will be returning a list of recommended show based on the similarity of the input show
-
-        The returned list should NOT contain:
-            - the given show
-            - any duplicates
-
-        The returned list should contain:
-            - list of shows with at least similarity score of 1
-
-
-        The list will start with the book with the highest similarity score.
+        this function returns a dict of recommended shows based on the similarity of the input show.
+        Dictionary starts with the show that has the highest similarity, and does not exceed the given limit.
 
         Preconditions:
             - show in self._vertices
             - self._vertices[show].kind == 'title'
-            - len(recommendation_list) => 1
+            - limit_anime >= 1
         """
 
         all_shows = self.get_all_vertices(kind="title")
         all_shows.remove(show)
 
-        scores_so_far = []
+        scores_so_far = {}
 
         for the_show in all_shows:
             score = self.get_similarity_score(the_show, show)
             if score > 0:
-                scores_so_far.append((score, the_show))
+                scores_so_far[the_show] = score
 
-        scores_so_far.sort(reverse=True)
+        scores_so_far = sorted(scores_so_far.items(), key=lambda x: x[1], reverse=True)
+        # scores_so_far.items() gave us all the key-value pairs as tuples
+        # for each tuple, we care about x[1] which is the score
+        # reverse=True -> highest value is first
 
-        recommendation_list = []
-        for score, title in scores_so_far:
-            recommendation_list.append(title)
+        recommendation_dict = {}
+        for title, score in scores_so_far[:limit_anime]:
+            recommendation_dict[title] = score
 
-        return recommendation_list
+        return recommendation_dict
+
+
+
+def score_range_helper(score: float) -> str:
+    if score >= 9.0:
+        return "9-10"
+    elif score >= 8.0:
+        return "8-9"
+    elif score >= 7.0:
+        return "7-8"
+    elif score >= 6.0:
+        return "6-7"
+    else:
+        return "0-6"
+
+
+def popularity_range_helper(popularity: float) -> str:
+    if popularity < 50:
+        return "0-50"
+    elif popularity < 100:
+        return "50-100"
+    elif popularity < 150:
+        return "100-150"
+    elif popularity < 200:
+        return "150-200"
+    elif popularity < 300:
+        return "200-300"
+    elif popularity < 400:
+        return "300-400"
+    elif popularity < 500:
+        return "400-500"
+    else:
+        return "500+"
 
 
 def load_the_graph(anime_data: str) -> Graph:
@@ -255,21 +280,25 @@ def load_the_graph(anime_data: str) -> Graph:
     shows = {}
     with open(anime_data) as file:
         reader = csv.reader(file)
+        next(reader)
         for row in reader:
-            uid = row[0]
-            title = row[1]
-            genre = row[3]
-            popularity = row[7]
-            score = row[9]
-            shows[uid] = title
-            show_attribute_graph.add_vertex(title, "title")
-            show_attribute_graph.add_vertex(genre, "genre")
-            show_attribute_graph.add_vertex(popularity, "popularity")
-            show_attribute_graph.add_vertex(score, "score")
+            if len(row) >= 10 and row[9] != '':
+                uid = row[0]
+                title = row[1]
+                genre = row[3].split(',')
+                popularity = popularity_range_helper(float(row[7]))
+                score = score_range_helper(float(row[9]))
+                shows[uid] = title
+                show_attribute_graph.add_vertex(title, "title")
+                show_attribute_graph.add_vertex(popularity, "popularity")
+                show_attribute_graph.add_vertex(score, "score")
+                for singular_genre in genre:
+                    singular_genre = singular_genre.strip()
+                    show_attribute_graph.add_vertex(singular_genre, "genre")
+                    show_attribute_graph.add_edge(title, singular_genre)
 
-            show_attribute_graph.add_edge(title, genre)
-            show_attribute_graph.add_edge(title, popularity)
-            show_attribute_graph.add_edge(title, score)
+                show_attribute_graph.add_edge(title, popularity)
+                show_attribute_graph.add_edge(title, score)
 
         return show_attribute_graph
 
@@ -279,3 +308,24 @@ if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
+if __name__ == '__main__':
+
+    import doctest
+    doctest.testmod()
+
+    le_graph = load_the_graph('animes.csv')
+
+    titles = list(le_graph.get_all_vertices(kind="title"))
+    test_title = titles[0]
+
+    recommendations = le_graph.recommend_new_show(test_title, 10)
+
+    if recommendations is None:
+        print(f'Sorry you have a little bit too unique taste')
+    else:
+        index = 1
+        print(f'Hello Hello dear user, since you liked "{test_title}" you might also like:')
+        for title, score in recommendations.items():
+            score_rounded = round(score, 2)
+            print(f' {index}-) {title}, {score_rounded}')
+            index += 1
