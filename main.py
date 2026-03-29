@@ -5,10 +5,34 @@ import user_graph
 import user_rating_graph
 import attribute_graph
 
+
+def combined_recommendation(user_recs: dict[str, int], attribute_recs: dict[str, int], returned_limit) -> list[str]:
+    """
+    Return a final list of anime titles based on the user-based recommendation and attribute-based recommendation and
+    combining them. The final list has a chosen number returned.
+
+    Up to <limit> anime are returned, starting with the anime with the highest similarity score,
+    then the second-highest similarity score, etc. Fewer than <limit> anime are returned if
+    and only if there aren't enough anime that meet the criteria.
+    
+    May need to normalize the scores to match up
+    """
+    COEFFICIENT = 0.5
+    anime_final_score = {}
+    for anime in user_recs:
+        if anime in attribute_recs:
+            combined_score = COEFFICIENT * user_recs[anime] + (1 - COEFFICIENT) * attribute_recs[anime]
+            if combined_score > 0:
+                anime_final_score[anime] = combined_score
+    sorted_anime = sorted(anime_final_score.items(), key=lambda x: x[1], reverse=True)
+    return [anime for anime, score in sorted_anime[:returned_limit]]
+
+
 if __name__ == "__main__":
     # g = user_graph.load_user_graph("data/profiles.csv", "data/animes.csv")
     # print(g.get_all_vertices())
     # print(g.recommend_anime(['Haikyuu!! Second Season', 'Shigatsu wa Kimi no Uso', 'Made in Abyss', 'Fullmetal Alchemist: Brotherhood', 'Kizumonogatari III: Reiketsu-hen'], 20, 50))
-    wg = user_rating_graph.load_user_graph("data/reviews_small.csv", "data/animes.csv")
-    print(wg.get_weight("OVERPOWERED99", "One Punch Man"))
-    print(wg.get_neighbours("One Punch Man"))
+    wg = user_rating_graph.load_user_graph("data/reviews.csv", "data/animes.csv")
+    print(wg.recommend_anime({'Haikyuu!! Second Season': 5, 'Shigatsu wa Kimi no Uso': 7, 'Made in Abyss': 6}, 15))
+    # print(wg.get_weight("OVERPOWERED99", "One Punch Man"))
+    # print(wg.get_neighbours("One Punch Man"))
