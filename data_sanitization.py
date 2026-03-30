@@ -44,14 +44,15 @@ def clean_profiles(profiles_file: str) -> dict[str, list[int]]:
             user_favourites = ast.literal_eval(row[3])
             anime_ids = set()
             favourites_clean = []
-            for i in range(len(user_favourites)):
+            for anime in user_favourites:
                 try:
-                    if user_favourites[i] not in anime_ids:  # skip duplicate anime ids
-                        anime_ids.add(user_favourites[i])
-                        favourites_clean.append(int(user_favourites[i]))
+                    anime_id = int(anime)
                 except ValueError:
                     favourites_clean = []
-                    break  # skip this user
+                    break
+                if anime_id not in anime_ids:
+                    anime_ids.add(anime_id)
+                    favourites_clean.append(anime_id)
             if user_id not in user_map and len(favourites_clean) >= USER_MINIMUM_FAVOURITES:
                 user_map[user_id] = favourites_clean
     return user_map
