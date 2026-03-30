@@ -6,7 +6,7 @@ import user_rating_graph
 import attribute_graph
 
 
-def combined_recommendation(user_recs: dict[str, int], attribute_recs: dict[str, int], returned_limit) -> list[str]:
+def combined_recommendation(user_recs: dict[str, float], attribute_recs: dict[str, float], returned_limit) -> list[str]:
     """
     Return a final list of anime titles based on the user-based recommendation and attribute-based recommendation and
     combining them. The final list has a chosen number returned.
@@ -14,7 +14,7 @@ def combined_recommendation(user_recs: dict[str, int], attribute_recs: dict[str,
     Up to <limit> anime are returned, starting with the anime with the highest similarity score,
     then the second-highest similarity score, etc. Fewer than <limit> anime are returned if
     and only if there aren't enough anime that meet the criteria.
-    
+
     May need to normalize the scores to match up
     """
     COEFFICIENT = 0.5
@@ -29,10 +29,8 @@ def combined_recommendation(user_recs: dict[str, int], attribute_recs: dict[str,
 
 
 if __name__ == "__main__":
+
     # g = user_graph.load_user_graph("data/profiles.csv", "data/animes.csv")
-    # print(g.get_all_vertices())
     # print(g.recommend_anime(['Haikyuu!! Second Season', 'Shigatsu wa Kimi no Uso', 'Made in Abyss', 'Fullmetal Alchemist: Brotherhood', 'Kizumonogatari III: Reiketsu-hen'], 20, 50))
     wg = user_rating_graph.load_user_graph("data/reviews.csv", "data/animes.csv")
-    print(wg.recommend_anime({'Haikyuu!! Second Season': 5, 'Shigatsu wa Kimi no Uso': 7, 'Made in Abyss': 6}, 15))
-    # print(wg.get_weight("OVERPOWERED99", "One Punch Man"))
-    # print(wg.get_neighbours("One Punch Man"))
+    print(wg.recommend_anime_weighted({"Fullmetal Alchemist: Brotherhood": 10, "Steins;Gate": 9, "Shingeki no Kyojin": 8, "Death Note": 7, "One Punch Man": 6 }, 100, 100))
