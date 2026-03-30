@@ -88,7 +88,7 @@ class _WeightedVertex:
         """
         import math
         common_anime = set(self.neighbours.keys()).intersection(other.neighbours.keys())
-        if len(common_anime) < 3:
+        if len(common_anime) < 4:
             return 0.0
         self_scores = []
         other_scores = []
@@ -166,17 +166,6 @@ class WeightedGraph(Graph):
         v2 = self._vertices[item2]
         return v1.neighbours.get(v2, 0)
 
-    def average_weight(self, item: str) -> float:
-        """Return the average weight of the edges adjacent to the vertex corresponding to item.
-
-        Raise ValueError if item does not corresponding to a vertex in the graph.
-        """
-        if item in self._vertices:
-            v = self._vertices[item]
-            return sum(v.neighbours.values()) / len(v.neighbours)
-        else:
-            raise ValueError
-
     def get_similarity_score(self, item1: str, item2: str, score_type: str = "unweighted") -> float:
         """Return the similarity score between the two given items in this graph.
 
@@ -207,7 +196,7 @@ class WeightedGraph(Graph):
         else:
             return self._vertices[item1].similarity_score_weighted(self._vertices[item2])
 
-    def recommend_anime(self, inputted_ratings: dict[str, int], limit_users: int, score_type: str = "weighted") -> list[tuple[str, int]]:
+    def recommend_anime_weighted(self, inputted_ratings: dict[str, int], limit_users: int = 50, limit_anime: int = 20) -> dict[str, float]:
         """Return a dictionary of up to <limit> recommended anime based on similarity to the given user based on the inputted
         list of anime titles. It takes the top anime from the top limit_users in similarity scores and then gives each one a
         new score by accumulating sim_score from user for every user that watched the anime.
@@ -236,9 +225,10 @@ class WeightedGraph(Graph):
 
         neighbour_users_to_score = []
         for user_id in self.get_all_vertices(kind='user'):
-            sim_score = self.get_similarity_score(user_id, "inputted_user", score_type)
+            sim_score = self.get_similarity_score(user_id, "inputted_user", "weighted")
             if sim_score > 0 and user_id != "inputted_user":
                 neighbour_users_to_score.append((user_id, sim_score))
+
         neighbour_users_to_score.sort(key=lambda x: x[1], reverse=True)
         top_users = dict(neighbour_users_to_score[:limit_users])
         top_anime = set()
@@ -249,22 +239,14 @@ class WeightedGraph(Graph):
         for anime in top_anime:
             total_score = 0
             total_similarity = 0
-            if score_type == "weighted":
-                for user in self.get_neighbours(anime):
-                    if user in top_users:
-                        total_score += top_users[user] * self.get_weight(user, anime)
-                        total_similarity += top_users[user]
-                if total_similarity > 0:
-                    anime_to_score[anime] = round(total_score / total_similarity)
-            elif score_type == "unweighted":
-                total_score = 0
-                for user in self.get_neighbours(anime):
-                    if user in top_users:
-                        total_score += 1
-                if total_score > 0:
-                    anime_to_score[anime] = total_score
+            for user in self.get_neighbours(anime):
+                if user in top_users:
+                    total_score += top_users[user] * self.get_weight(user, anime)
+                    total_similarity += top_users[user]
+            if total_similarity > 0:
+                anime_to_score[anime] = round(total_score / total_similarity, 6)
         sorted_anime = sorted(anime_to_score.items(), key=lambda x: x[1], reverse=True)
-        return [(anime, score) for anime, score in sorted_anime[:100]]
+        return {anime: score for anime, score in sorted_anime[:limit_anime]}
 
 
 def load_user_graph(user_file: str, anime_file: str) -> WeightedGraph:
