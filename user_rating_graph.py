@@ -1,6 +1,7 @@
 """Module imports (docstring required)?"""
 from __future__ import annotations
 import data_sanitization
+from user_graph import Graph
 
 
 class _WeightedVertex:
@@ -30,7 +31,7 @@ class _WeightedVertex:
         This vertex is initialized with no neighbours.
 
         Preconditions:
-            - kind in {'user', 'book'}
+            - kind in {'user', 'anime'}
         """
         self.item = item
         self.kind = kind
@@ -110,7 +111,7 @@ class _WeightedVertex:
         return numerator / denominator
 
 
-class WeightedGraph:
+class WeightedGraph(Graph):
     """A graph used to represent a user rating - anime network.
     """
     # Private Instance Attributes:
@@ -122,6 +123,7 @@ class WeightedGraph:
     def __init__(self) -> None:
         """Initialize an empty graph (no vertices or edges)."""
         self._vertices = {}
+        Graph.__init__(self)
 
     def add_vertex(self, item: str, kind: str) -> None:
         """Add a vertex with the given item and kind to this graph.
@@ -130,15 +132,10 @@ class WeightedGraph:
         Do nothing if the given item is already in this graph.
 
         Preconditions:
-            - kind in {'user', 'book'}
+            - kind in {'user', 'anime'}
         """
         if item not in self._vertices:
             self._vertices[item] = _WeightedVertex(item, kind)
-
-    def delete_vertex(self, item: str) -> None:
-        """Delete a vertex with the given item from the graph"""
-        if item in self._vertices:
-            del self._vertices[item]
 
     def add_edge(self, item1: str, item2: str, weight: int = 1) -> None:
         """Add an edge between the two vertices with the given items in this graph.
@@ -156,43 +153,6 @@ class WeightedGraph:
             v2.neighbours[v1] = weight
         else:
             raise ValueError
-
-    def adjacent(self, item1: str, item2: str) -> bool:
-        """Return whether item1 and item2 are adjacent vertices in this graph.
-
-        Return False if item1 or item2 do not appear as vertices in this graph.
-        """
-        if item1 in self._vertices and item2 in self._vertices:
-            v1 = self._vertices[item1]
-            return any(v2.item == item2 for v2 in v1.neighbours)
-        else:
-            return False
-
-    def get_neighbours(self, item: str) -> set:
-        """Return a set of the neighbours of the given item.
-
-        Note that the *items* are returned, not the _WeightedVertex objects themselves.
-
-        Raise a ValueError if item does not appear as a vertex in this graph.
-        """
-        if item in self._vertices:
-            v = self._vertices[item]
-            return {neighbour.item for neighbour in v.neighbours}
-        else:
-            raise ValueError
-
-    def get_all_vertices(self, kind: str = '') -> set:
-        """Return a set of all vertex items in this graph.
-
-        If kind != '', only return the items of the given vertex kind.
-
-        Preconditions:
-            - kind in {'', 'user', 'anime'}
-        """
-        if kind != '':
-            return {v.item for v in self._vertices.values() if v.kind == kind}
-        else:
-            return set(self._vertices.keys())
 
     def get_weight(self, item1: str, item2: str) -> int:
         """Return the weight of the edge between the given items.
@@ -247,7 +207,7 @@ class WeightedGraph:
         else:
             return self._vertices[item1].similarity_score_weighted(self._vertices[item2])
 
-    def recommend_anime(self, inputted_ratings: dict[str, int], limit_users: int, score_type: str = "weighted") -> dict[str, int]:
+    def recommend_anime(self, inputted_ratings: dict[str, int], limit_users: int, score_type: str = "weighted") -> list[tuple[str, int]]:
         """Return a dictionary of up to <limit> recommended anime based on similarity to the given user based on the inputted
         list of anime titles. It takes the top anime from the top limit_users in similarity scores and then gives each one a
         new score by accumulating sim_score from user for every user that watched the anime.
@@ -264,10 +224,9 @@ class WeightedGraph:
         and only if there aren't enough anime that meet the above criteria.
 
         Preconditions:
-            - anime in self._vertices
             - self._vertices[anime].kind == 'anime'
             - limit >= 1
-            - all(anime in self._vertices for anime in inputted_anime)
+            - all(anime in self._vertices for anime in inputted_ratings)
         """
         # Create a user based on inputted anime
         self.delete_vertex("inputted_user")
@@ -277,7 +236,7 @@ class WeightedGraph:
 
         neighbour_users_to_score = []
         for user_id in self.get_all_vertices(kind='user'):
-            sim_score = self.get_similarity_score(user_id, "inputted_user", "weighted")
+            sim_score = self.get_similarity_score(user_id, "inputted_user", score_type)
             if sim_score > 0 and user_id != "inputted_user":
                 neighbour_users_to_score.append((user_id, sim_score))
         neighbour_users_to_score.sort(key=lambda x: x[1], reverse=True)
@@ -290,13 +249,22 @@ class WeightedGraph:
         for anime in top_anime:
             total_score = 0
             total_similarity = 0
-            for user in self.get_neighbours(anime):
-                if user in top_users:
-                    total_score += top_users[user] * self.get_weight(user, anime)
-                    total_similarity += top_users[user]
-            if total_similarity > 0:
-                anime_to_score[anime] = round(total_score / total_similarity)
-        return anime_to_score
+            if score_type == "weighted":
+                for user in self.get_neighbours(anime):
+                    if user in top_users:
+                        total_score += top_users[user] * self.get_weight(user, anime)
+                        total_similarity += top_users[user]
+                if total_similarity > 0:
+                    anime_to_score[anime] = round(total_score / total_similarity)
+            elif score_type == "unweighted":
+                total_score = 0
+                for user in self.get_neighbours(anime):
+                    if user in top_users:
+                        total_score += 1
+                if total_score > 0:
+                    anime_to_score[anime] = total_score
+        sorted_anime = sorted(anime_to_score.items(), key=lambda x: x[1], reverse=True)
+        return [(anime, score) for anime, score in sorted_anime[:100]]
 
 
 def load_user_graph(user_file: str, anime_file: str) -> WeightedGraph:
@@ -308,16 +276,11 @@ def load_user_graph(user_file: str, anime_file: str) -> WeightedGraph:
         - anime_file is the path to a CSV file corresponding to the anime data
         - every favourite anime in user_file is an existing anime in the anime data
 
-    >>> g = load_user_graph('data/profiles_small.csv', 'data/animes_small.csv')
+    >>> g = load_user_graph('data/reviews_small.csv', 'data/animes.csv')
     >>> len(g.get_all_vertices(kind='anime'))
-    12
+    5
     >>> len(g.get_all_vertices(kind='user'))
-    12
-    >>> user1 = g.get_neighbours('DesolatePsyche')
-    >>> len(user1)
-    4
-    >>> "Code Geass: Hangyaku no Lelouch R2" in user1
-    True
+    10
     """
     g = WeightedGraph()
     user_map = data_sanitization.clean_ratings(user_file)
@@ -331,7 +294,6 @@ def load_user_graph(user_file: str, anime_file: str) -> WeightedGraph:
                 continue
             g.add_vertex(anime_title, "anime")
             g.add_edge(user, anime_title, weight)
-
     return g
 
 
