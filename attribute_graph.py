@@ -198,26 +198,62 @@ class Graph:
         else:
             return self._vertices[item1].similarity_score(self._vertices[item2])
 
-    def recommend_new_show(self, show: str, limit_anime: int) -> dict[str, float]:
+    def find_closes_title(self, show: str) -> str:
+        """
+        this is a helper function finding the show that has a similar name as the given input
+
+        """
+        input = show.lower().strip()
+        all_shows = self.get_all_vertices(kind="title")
+
+        for each_show in all_shows:
+            if input in each_show.lower():
+                return each_show
+        return ""
+
+    def recommend_new_show(self, shows: list[str], limit_anime: int) -> dict[str, float]:
         """
         this function returns a dict of recommended shows based on the similarity of the input show.
         Dictionary starts with the show that has the highest similarity, and does not exceed the given limit.
 
         Preconditions:
-            - show in self._vertices
-            - self._vertices[show].kind == 'title'
+            - all( show in self._vertices for show in shows)
+            - all( self._vertices[show].kind == 'title', for show in shows)
             - limit_anime >= 1
         """
 
+        corrected_shows = []
+        for show in shows:
+            if show in self._vertices:
+                corrected_shows.append(show)
+            else:
+                closest_title = self.find_closes_title(show)
+                if closest_title != "":
+                    corrected_shows.append(closest_title)
+                    print(f" umm... We couldn't find '{show}', did you possibly mean {closest_title} ")
+                else:
+                    print(f" '{show}' is not found, so we couldn't find any match... "
+                          f"but I prsonally recommend Frieren its a great anime !")
+
         all_shows = self.get_all_vertices(kind="title")
-        all_shows.remove(show)
+        for show in corrected_shows:
+            if show in all_shows:
+                all_shows.remove(show)
+            elif show not in all_shows:
+                closest_title = self.find_closes_title(show)
+                all_shows.remove(closest_title)
+                if closest_title == "":
+                    pass
 
         scores_so_far = {}
 
         for the_show in all_shows:
-            score = self.get_similarity_score(the_show, show)
-            if score > 0:
-                scores_so_far[the_show] = score
+            total_score = 0
+            for show in corrected_shows:
+                total_score += self.get_similarity_score(the_show, show)
+            average = total_score/len(shows)
+            if average > 0:
+                scores_so_far[the_show] = average
 
         scores_so_far = sorted(scores_so_far.items(), key=lambda x: x[1], reverse=True)
         # scores_so_far.items() gave us all the key-value pairs as tuples
@@ -233,6 +269,11 @@ class Graph:
 
 
 def score_range_helper(score: float) -> str:
+    """
+    helper function that returns score
+    :param score:
+    :return:
+    """
     if score >= 9.0:
         return "9-10"
     elif score >= 8.0:
@@ -244,16 +285,11 @@ def score_range_helper(score: float) -> str:
     else:
         return "0-6"
 
-
 def popularity_range_helper(popularity: float) -> str:
-    if popularity < 50:
-        return "0-50"
-    elif popularity < 100:
-        return "50-100"
-    elif popularity < 150:
-        return "100-150"
+    if popularity < 100:
+        return "0-100"
     elif popularity < 200:
-        return "150-200"
+        return "100-200"
     elif popularity < 300:
         return "200-300"
     elif popularity < 400:
@@ -316,9 +352,9 @@ if __name__ == '__main__':
     le_graph = load_the_graph('animes.csv')
 
     titles = list(le_graph.get_all_vertices(kind="title"))
-    test_title = titles[0]
+    test_title = [titles[0], "narudo"]
 
-    recommendations = le_graph.recommend_new_show(test_title, 10)
+    recommendations = le_graph.recommend_new_show(test_title, 30)
 
     if recommendations is None:
         print(f'Sorry you have a little bit too unique taste')
