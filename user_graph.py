@@ -3,6 +3,7 @@ from __future__ import annotations
 import data_sanitization
 import networkx as nx
 
+
 class _Vertex:
     """A vertex in a graph, used to represent a user or an anime.
 
@@ -28,7 +29,7 @@ class _Vertex:
         This vertex is initialized with no neighbours.
 
         Preconditions:
-            - kind in {'user', 'book'}
+            - kind in {'user', 'anime'}
         """
         self.item = item
         self.kind = kind
@@ -66,7 +67,7 @@ class Graph:
         Do nothing if the given item is already in this graph.
 
         Preconditions:
-            - kind in {'user', 'book'}
+            - kind in {'user', 'anime'}
         """
         if item not in self._vertices:
             self._vertices[item] = _Vertex(item, kind)
@@ -74,6 +75,9 @@ class Graph:
     def delete_vertex(self, item: str) -> None:
         """Delete a vertex with the given item from the graph"""
         if item in self._vertices:
+            v = self._vertices[item]
+            for neighbour in v.neighbours:
+                neighbour.neighbours.remove(v)
             del self._vertices[item]
 
     def add_edge(self, item1: str, item2: str) -> None:
@@ -151,23 +155,18 @@ class Graph:
             return self._vertices[item1].similarity_score(self._vertices[item2])
         raise ValueError
 
-    def recommend_anime(self, inputted_anime: list[str], limit_anime: int, limit_users: int) -> list[str]:
-        """Return a list of up to <limit> recommended anime based on similarity to the given user based on the inputted
-        list of anime titles. It takes the top anime from the top limit_users in similarity scores and then gives each one a
-        new score by accumulating sim_score from user for every user that watched the anime.
+    def recommend_anime(self, inputted_anime: list[str], limit_anime: int, limit_users: int) -> dict[str, float]:
+        """Return a dict mapping recommended anime titles to their recommendation scores,
+        in descending order of score, with at most <limit_anime> results.
 
-        The return value is a list of the titles of recommended books, sorted in
-        *descending order* of similarity score. Ties are ignored for now.
-
-        The returned list should NOT contain:
+        The returned dict keys should NOT contain:
             - the input anime itself
             - any anime with a similarity score of 0 to the input anime
             - any duplicates
             - any vertices that represents a user (instead of an anime)
 
-        Up to <limit> anime are returned, starting with the anime with the highest similarity score,
-        then the second-highest similarity score, etc. Fewer than <limit> anime are returned if
-        and only if there aren't enough anime that meet the above criteria.
+        Up to <limit_anime> anime are returned, ordered from highest to lowest score.
+        Fewer than <limit_anime> anime may be returned if not enough valid candidates exist.
 
         Preconditions:
             - anime in self._vertices
@@ -201,8 +200,7 @@ class Graph:
             if total_score > 0:
                 anime_to_score[anime] = total_score
         sorted_anime = sorted(anime_to_score.items(), key=lambda x: x[1], reverse=True)
-        return [anime for anime, score in sorted_anime[:limit_anime]]
-
+        return {anime: score for anime, score in sorted_anime[:limit_anime]}
 
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
         """Convert this graph into a networkx Graph. Copied from CSC111 A3 handout.
@@ -279,4 +277,3 @@ if __name__ == '__main__':
         'allowed-io': ['load_review_graph'],
         'max-nested-blocks': 4
     })
-
