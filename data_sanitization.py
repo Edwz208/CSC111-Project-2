@@ -93,7 +93,7 @@ def clean_ratings(ratings_file: str) -> dict[str, list[tuple[int, int]]]:
     reviews required.
     """
     user_map = {}
-    USER_MINIMUM_REVIEWS = 2
+    USER_MINIMUM_REVIEWS = 3
     df = pd.read_csv(ratings_file)
     user_anime_id = set()
     for _, row in df.iterrows():
@@ -115,22 +115,8 @@ def clean_ratings(ratings_file: str) -> dict[str, list[tuple[int, int]]]:
     return filtered_user_map
 
 
-def remove_under_favourites_lower_bound(list_of_users: dict[str, list[int]], limit: int) -> dict[str, list[int]]:
-    """
-    Given a list of user dictionaries, return the list with only those that have a number of favourite anime above the
-    inputted integer.
-    """
-    new_users = {}
-    for user in list_of_users:
-        if len(list_of_users[user]) >= limit:
-            new_users[user] = list_of_users[user]
-    return new_users
-
-
 if __name__ == "__main__":
-    user_mapping = clean_profiles("data/profiles_small.csv")
-    print(user_mapping)
-    print(get_anime_id_title_map("data/animes_small.csv", user_mapping))
+    pass
     # import python_ta.contracts
     # python_ta.contracts.check_all_contracts()
     #
