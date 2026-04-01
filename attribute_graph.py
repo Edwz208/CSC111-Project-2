@@ -34,15 +34,18 @@ class _Vertex:
         This vertex is initialized with no neighbours.
 
         Preconditions:
-            - kind in {'title', 'genre', 'popularity', 'score'}
+            - kind in {'title', 'genre', 'popularity', 'score'} !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         """
         self.item = item
         self.kind = kind
         self.neighbours = set()
 
     def similarity_score(self, other: _Vertex) -> float:
-        """This function returns the similarity score between this and given vertex.
-
+        """This function returns the similarity score between the current and given vertex in float form.
+        if the self or given vertex does not have any neighbours, then there is nothing to check, this returns 0.
+        Otherwise, the function takes the intersected neighbours/edges,
+        and divides it with the total number of neighbours/edges to find the average similarity.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         """
 
         if not self.neighbours or not other.neighbours:
@@ -239,11 +242,6 @@ class Graph:
         for show in corrected_shows:
             if show in all_shows:
                 all_shows.remove(show)
-            elif show not in all_shows:
-                closest_title = self.find_closes_title(show)
-                all_shows.remove(closest_title)
-                if closest_title == "":
-                    pass
 
         scores_so_far = {}
 
@@ -251,9 +249,9 @@ class Graph:
             total_score = 0
             for show in corrected_shows:
                 total_score += self.get_similarity_score(the_show, show)
-            average = total_score/len(shows)
+            average = total_score/len(corrected_shows)
             if average > 0:
-                scores_so_far[the_show] = average
+                scores_so_far[the_show] = round(average, 2)
 
         scores_so_far = sorted(scores_so_far.items(), key=lambda x: x[1], reverse=True)
         # scores_so_far.items() gave us all the key-value pairs as tuples
@@ -314,24 +312,23 @@ def load_the_graph(anime_data: str) -> Graph:
     """
     show_attribute_graph = Graph()
     shows = {}
-    with open(anime_data) as file:
+    with open(anime_data, mode="r", encoding="utf-8") as file:
         reader = csv.reader(file)
         next(reader)
         for row in reader:
             if len(row) >= 10 and row[9] != '':
                 uid = row[0]
                 title = row[1]
-                genre = row[3].split(',')
+                genres = row[3].split(',')
                 popularity = popularity_range_helper(float(row[7]))
                 score = score_range_helper(float(row[9]))
                 shows[uid] = title
                 show_attribute_graph.add_vertex(title, "title")
                 show_attribute_graph.add_vertex(popularity, "popularity")
                 show_attribute_graph.add_vertex(score, "score")
-                for singular_genre in genre:
-                    singular_genre = singular_genre.strip()
-                    show_attribute_graph.add_vertex(singular_genre, "genre")
-                    show_attribute_graph.add_edge(title, singular_genre)
+                for genre in genres:
+                    show_attribute_graph.add_vertex(genre, "genre")
+                    show_attribute_graph.add_edge(title, genre)
 
                 show_attribute_graph.add_edge(title, popularity)
                 show_attribute_graph.add_edge(title, score)
@@ -344,19 +341,15 @@ if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
-if __name__ == '__main__':
-
-    import doctest
-    doctest.testmod()
-
-    le_graph = load_the_graph('animes.csv')
+    le_graph = load_the_graph('data/animes.csv')
 
     titles = list(le_graph.get_all_vertices(kind="title"))
-    test_title = [titles[0], "narudo"]
+    test_title = ["One Piece"]
+    #print(le_graph._vertices[test_title].neighbours)
 
-    recommendations = le_graph.recommend_new_show(test_title, 30)
+    recommendations = le_graph.recommend_new_show(test_title, 50)
 
-    if recommendations is None:
+    if not recommendations:
         print(f'Sorry you have a little bit too unique taste')
     else:
         index = 1
