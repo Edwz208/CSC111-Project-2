@@ -277,6 +277,26 @@ def load_user_graph(reviews_file: str, anime_file: str) -> WeightedGraph:
     return g
 
 
+def load_custom_user_graph(num_top_users: int, total_graph: WeightedGraph, inputted_ratings: dict[str, int]) \
+        -> WeightedGraph:
+    """Return a graph containing the inputted user, their inputted anime,
+    the top similar users, and all anime adjacent to those users."""
+    g = WeightedGraph()
+    input_username = "inputted_user"
+    total_graph.add_input_user(inputted_ratings, input_username)
+    top_users = total_graph.get_top_similar_users(input_username, num_top_users)
+    g.add_vertex(input_username, "user")
+    for input_anime in inputted_ratings:
+        g.add_vertex(input_anime, "anime")
+        g.add_edge(input_anime, input_username, inputted_ratings[input_anime])
+    for user in top_users:
+        g.add_vertex(user, 'user')
+        for anime in total_graph.get_neighbours(user):
+            g.add_vertex(anime, "anime")
+            g.add_edge(user, anime, total_graph.get_weight(user, anime))
+    return g
+
+
 if __name__ == '__main__':
     pass
     # import python_ta.contracts
