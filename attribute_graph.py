@@ -1,3 +1,15 @@
+
+"""
+CSC111 Project 2: Anime Recommendation System - Attribute Based Graph
+
+This Python module is an anime recommendation system, using a graph that models
+relationship of shows and their attributes like genre, popularity, and score;
+and Jaccard siimilarity to calculate the similarity between the anime shows.
+
+This file is Copyright (c) 2026 Miray Ozdemir, Lily Annelise Canete-Goodine, Parmida Arab, Edwin Zeng
+
+"""
+
 from __future__ import annotations
 import csv
 from typing import Any
@@ -7,6 +19,7 @@ import networkx as nx
 
 class _Vertex:
     """A vertex in an anime show data graph, used to represent a show or an attribute.
+
     Each vertex item is either a show title or an attribute.
     Attributes will be:
     - genre
@@ -15,8 +28,8 @@ class _Vertex:
     Both the show title and attributes are represented as strings.
 
     Instance Attributes:
-        - title: The data stored in this vertex represents a show, or an attribute.
-        - kind: The type of this vertex: 'attribute name' or 'show'.
+        - item: The data stored in this vertex represents a show, or an attribute.
+        - kind: The type of this vertex. It can be; 'title', 'genre', 'score', 'popularity'.
         - neighbours: The vertices that are adjacent to this vertex.
 
     Representation Invariants:
@@ -31,21 +44,22 @@ class _Vertex:
     def __init__(self, item: Any, kind: str) -> None:
         """Initialize a new vertex with the given item and kind.
 
-        This vertex is initialized with no neighbours.
+        This initialized vertex has no neighbours.
 
         Preconditions:
-            - kind in {'title', 'genre', 'popularity', 'score'} !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            - kind in {'title', 'genre', 'popularity', 'score'}
         """
+
         self.item = item
         self.kind = kind
         self.neighbours = set()
 
     def similarity_score(self, other: _Vertex) -> float:
-        """This function returns the similarity score between the current and given vertex in float form.
-        if the self or given vertex does not have any neighbours, then there is nothing to check, this returns 0.
-        Otherwise, the function takes the intersected neighbours/edges,
-        and divides it with the total number of neighbours/edges to find the average similarity.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        """This function returns the Jaccard similarity score between this and the given vertex in float type.
+        The similarity score gets calculated by the dividing the size of the intersection of the two vertex,
+         to their the size of union.The result will be a float between 0 and 1.
+        if either vertex does not have any neighbours, then the similarity score will be 0.
+
         """
 
         if not self.neighbours or not other.neighbours:
@@ -68,16 +82,19 @@ class Graph:
     _vertices: dict[Any, _Vertex]
 
     def __init__(self) -> None:
-        """Initialize an empty graph (no vertices or edges)."""
+        """Initialize an empty graph without any vertices or edges.
+        """
+
         self._vertices = {}
 
     def add_vertex(self, item: Any, kind: str) -> None:
         """Add a vertex with the given item and kind to this graph.
-        The new vertex is not adjacent to any other vertices.
-        Do nothing if the given item is already in this graph.
+        The initiazlized vertec has no neighburs. Do nothing if the given item is already existing this graph.
+
         Preconditions:
             - kind in {'title', 'genre', 'popularity', 'score'}
         """
+
         if item not in self._vertices:
             self._vertices[item] = _Vertex(item, kind)
 
@@ -90,21 +107,22 @@ class Graph:
             - item1 != item2
 
         >>> graph = Graph()
-        >>> graph.add_vertex("Sailor Moon", "Title")
+        >>> graph.add_vertex("Sailor Moon", "title")
         >>> graph.add_vertex("Mahou Shoujo", "genre")
         >>> graph.add_edge("Sailor Moon", "Mahou Shoujo")
         >>> "Mahou Shoujo" in graph.get_neighbours("Sailor Moon")
         True
 
         """
-        if item1 in self._vertices and item2 in self._vertices:
+        if item1 not in self._vertices or item2 not in self._vertices:
+            raise ValueError
+
+        else:
             v1 = self._vertices[item1]
             v2 = self._vertices[item2]
 
             v1.neighbours.add(v2)
             v2.neighbours.add(v1)
-        else:
-            raise ValueError
 
     def get_neighbours(self, item: Any) -> set:
         """Return a set of the neighbours items of the given item.
@@ -120,7 +138,8 @@ class Graph:
     def get_all_attribute(self, i: int, anime_data: str) -> set:
         """
         this function will collect all the attributes in given index in a set.
-        Raise a ValuError if index doesn't make sense.
+        Raise a ValueError if the given index i is out of bounds in csv rows.
+
                 - uid = row[0]
                 - title = row[1]
                 - genre = row[3]
@@ -129,19 +148,22 @@ class Graph:
         """
         with open(anime_data) as file:
             reader = csv.reader(file)
+            next(reader)
 
-            wanted = set()
+            attributes = set()
             for row in reader:
-                wanted.add(row[i])
-            return wanted
+                if i >= len(row):
+                    raise ValueError("index is out of bounds")
+                attributes.add(row[i])
+            return attributes
 
     def get_all_vertices(self, kind: str = '') -> set:
         """The function will return a set of all vertex items of the given kind.
 
-        Raise ValueError if kind is not given.
+        If the kinf is not given, the function will return everything.
 
         Preconditions:
-            - self.kind in {'title', 'genre', 'popularity', 'score'}
+            - kind in {'title', 'genre', 'popularity', 'score'}
 
         >>> le_graph = Graph()
         >>> le_graph.add_vertex("Sailor Moon", "title")
@@ -155,10 +177,10 @@ class Graph:
             return {v.item for v in self._vertices.values() if v.kind == kind}
 
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
-        """Convert this graph into a networkx Graph.
+        """Convert this graph into a networkx Graph. Copied from CSC111 A3 handout.
+
         max_vertices specifies the maximum number of vertices that can appear in the graph.
         (This is necessary to limit the visualization output for large graphs.)
-        Note that this method is provided for you, and you shouldn't change it.
         """
         graph_nx = nx.Graph()
         for v in self._vertices.values():
@@ -175,18 +197,18 @@ class Graph:
         return graph_nx
 
     def get_similarity_score(self, item1: Any, item2: Any) -> float:
-        """Return the similarity score between the two given items in this graph.
+        """Return the Jaccard similarity score between the given items, item1 and item2, in this graph.
 
-        Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
+        if the vertices item1 or item2 do not appear in this graph, Raise a ValueError .
 
 
         >>> le_graph = Graph()
-        >>> le_graph.add_vertex("Sailor Moon", "Title")
+        >>> le_graph.add_vertex("Sailor Moon", "title")
         >>> le_graph.add_vertex("Mahou Shoujo", "genre")
-        >>> le_graph.add_vertex("Frieren", "Title")
+        >>> le_graph.add_vertex("Frieren", "title")
         >>> le_graph.add_vertex("action", "genre")
         >>> le_graph.add_vertex("comedy", "genre")
-        >>> le_graph.add_vertex("Mob Psycho", "Title")
+        >>> le_graph.add_vertex("Mob Psycho", "title")
         >>> le_graph.add_edge("Mob Psycho", "action")
         >>> le_graph.add_edge("Mob Psycho", "comedy")
         >>> le_graph.add_edge("Frieren", "action")
@@ -203,21 +225,27 @@ class Graph:
 
     def find_closes_title(self, show: str) -> str:
         """
-        this is a helper function finding the show that has a similar name as the given input
+        Return the show that has a similar name as the given input, by finding the first vertex title
+        the function encounters that contains the given show as a substring.
+        Function is case-insensitive, and returns an empty string if no match is found.
 
         """
-        input = show.lower().strip()
+        lowered_input = show.lower().strip()
         all_shows = self.get_all_vertices(kind="title")
 
         for each_show in all_shows:
-            if input in each_show.lower():
+            if lowered_input in each_show.lower():
                 return each_show
         return ""
 
     def recommend_new_show(self, shows: list[str], limit_anime: int) -> dict[str, float]:
         """
-        this function returns a dict of recommended shows based on the similarity of the input show.
-        Dictionary starts with the show that has the highest similarity, and does not exceed the given limit.
+        this function returns a dict of recommended shows, with a lenght of no more than "limit_anime",
+        sorted by the similarity scores. The recommendations are based on the jaccard similarity between
+        a potential show and all inputted shows in "shows" list.Shows that are already in the inputted list
+        is/are excluded from the final recommendations.
+        Dictionary goes from the show that has the highest similarity to lowest similarit,
+         and the output does not exceed the given limit.
 
         Preconditions:
             - all( show in self._vertices for show in shows)
@@ -249,7 +277,7 @@ class Graph:
             total_score = 0
             for show in corrected_shows:
                 total_score += self.get_similarity_score(the_show, show)
-            average = total_score/len(corrected_shows)
+            average = total_score / len(corrected_shows)
             if average > 0:
                 scores_so_far[the_show] = round(average, 2)
 
@@ -265,25 +293,34 @@ class Graph:
         return recommendation_dict
 
 
-
 def score_range_helper(score: float) -> str:
     """
-    helper function that returns score
-    :param score:
-    :return:
+    Return the range of the score as a string of the given float score.
+    Later these labels will be used as attribute vertices in the graph.
+
+    >>> score_range_helper(8.5)
+    '8-9'
     """
     if score >= 9.0:
-        return "9-10"
+        return '9-10'
     elif score >= 8.0:
-        return "8-9"
+        return '8-9'
     elif score >= 7.0:
-        return "7-8"
+        return '7-8'
     elif score >= 6.0:
-        return "6-7"
+        return '6-7'   #six seven
     else:
-        return "0-6"
+        return '0-6'
+
 
 def popularity_range_helper(popularity: float) -> str:
+    """
+    Return the range of the popularity as a string of the given float popularity value.
+    Later these labels will be used as attribute vertices in the graph.
+
+    >>> popularity_range_helper(111)
+    '100-200'
+    """
     if popularity < 100:
         return "0-100"
     elif popularity < 200:
@@ -299,16 +336,22 @@ def popularity_range_helper(popularity: float) -> str:
 
 
 def load_the_graph(anime_data: str) -> Graph:
-    """Return a show-attribute relationship graph corresponding to the given datasets.
-    Graph stores a vertex for each show and attributes in the datasets.
-    Each vertex stores as its item either a show title or attributes.
+    """Return a show-attribute relationship graph corresponding to the given csv dataset.
+    Graph stores a vertex for each show and attributes.
+    Use the "kind" _Vertex attribute to differentiate between different vertex types.
+    Shows stored with kind="title", and attributes with kind="genre", "popularity",
+    or "score".
     The show title vertices can not have an edge betwen them, nor can attribute vertices;
     A show vertex and an attribute vertex can have an edge between them.
-    Use the "kind" _Vertex attribute to differentiate between different vertex types.
     Edges represent the relationship between a show and an attribute. In this graph, each edge
-    only represents the existence of a relation.
+    represents the existence of a relation.
     Preconditions:
         - anime_data is the path to a CSV file corresponding to the relevant anime data.
+        - uid = row[0]
+        - title = row[1]
+        - genre = row[3]
+        - popularity = row[7]
+        - score = row[9]
     """
     show_attribute_graph = Graph()
     shows = {}
@@ -358,3 +401,6 @@ if __name__ == '__main__':
             score_rounded = round(score, 2)
             print(f' {index}-) {title}, {score_rounded}')
             index += 1
+
+
+
