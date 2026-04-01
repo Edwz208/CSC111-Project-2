@@ -50,65 +50,23 @@ class _WeightedVertex:
                 / len(set(self.neighbours.keys()).union(other.neighbours)))
 
     def similarity_score_weighted(self, other: _WeightedVertex) -> float:
-        """Return the strict weighted similarity score between this vertex and other.
-        Utilizes pearson correlction coefficient.
-        Returns 0 if:
-            - the users have less than 3 anime in common
-            - one user's common ratings have no variation (denominator = 0)
-
-        Preconditions:
-            - self.kind == other.kind
-
-        >>> g = WeightedGraph()
-        >>> g.add_vertex("u1", "user")
-        >>> g.add_vertex("u2", "user")
-        >>> g.add_vertex("a1", "anime")
-        >>> g.add_vertex("a2", "anime")
-        >>> g.add_vertex("a3", "anime")
-        >>> g.add_edge("u1", "a1", 5)
-        >>> g.add_edge("u1", "a2", 4)
-        >>> g.add_edge("u1", "a3", 1)
-        >>> g.add_edge("u2", "a1", 3)
-        >>> g.add_edge("u2", "a2", 2)
-        >>> g.add_edge("u2", "a3", 1)
-        >>> round(g.get_similarity_score("u1", "u2", "weighted"), 5)
-        0.96077
-
-        >>> g = WeightedGraph()
-        >>> g.add_vertex("u1", "user")
-        >>> g.add_vertex("u2", "user")
-        >>> g.add_vertex("a1", "anime")
-        >>> g.add_vertex("a2", "anime")
-        >>> g.add_edge("u1", "a1", 5)
-        >>> g.add_edge("u1", "a2", 4)
-        >>> g.add_edge("u2", "a1", 3)
-        >>> g.add_edge("u2", "a2", 2)
-        >>> g.get_similarity_score("u1", "u2", "weighted")
-        0.0
-        """
-        import math
-        common_anime = set(self.neighbours.keys()).intersection(other.neighbours.keys())
-        if len(common_anime) < 4:
+        """Return cosine similarity between this user and other based on shared anime ratings."""
+        common_anime = set(self.neighbours).intersection(other.neighbours)
+        if len(common_anime) < 2:
             return 0.0
-        self_scores = []
-        other_scores = []
-        for neighbour in common_anime:
-            self_scores.append(self.neighbours[neighbour])
-            other_scores.append(other.neighbours[neighbour])
-        mean_self = sum(self_scores) / len(self_scores)
-        mean_other = sum(other_scores) / len(other_scores)
         numerator = 0.0
-        for i in range(len(self_scores)):
-            numerator += (self_scores[i] - mean_self) * (other_scores[i] - mean_other)
         sum_sq_self = 0.0
         sum_sq_other = 0.0
-        for i in range(len(self_scores)):
-            sum_sq_self += (self_scores[i] - mean_self) ** 2
-            sum_sq_other += (other_scores[i] - mean_other) ** 2
-        denominator = math.sqrt(sum_sq_self) * math.sqrt(sum_sq_other)
-        if denominator == 0:
+        for anime in common_anime:
+            r1 = self.neighbours[anime]
+            r2 = other.neighbours[anime]
+            numerator += r1 * r2
+            sum_sq_self += r1 ** 2
+            sum_sq_other += r2 ** 2
+        if sum_sq_self == 0 or sum_sq_other == 0:
             return 0.0
-        return numerator / denominator
+
+        return numerator / ((sum_sq_self ** 0.5) * (sum_sq_other ** 0.5))
 
 
 class WeightedGraph(Graph):
@@ -237,16 +195,21 @@ class WeightedGraph(Graph):
         anime_to_score = {}
         top_anime.difference_update(set(inputted_ratings.keys()))
         for anime in top_anime:
-            total_score = 0
-            total_similarity = 0
+            total_score = 0.0
+            total_similarity = 0.0
+            contributors = 0
             for user in self.get_neighbours(anime):
                 if user in top_users:
                     total_score += top_users[user] * self.get_weight(user, anime)
                     total_similarity += top_users[user]
-            if total_similarity > 0:
-                anime_to_score[anime] = round(total_score / total_similarity, 6)
+                    contributors += 1
+            if total_similarity > 0 and contributors >= 2:
+                adjusted_score = round((total_score / total_similarity) * (contributors / (contributors + 1)), 6)
+                normalized_score = max(0, min(1, (adjusted_score - 1) / 9))
+                anime_to_score[anime] = normalized_score
+
         sorted_anime = sorted(anime_to_score.items(), key=lambda x: x[1], reverse=True)
-        return {anime: score for anime, score in sorted_anime[:limit_anime]}
+        return dict(sorted_anime[:limit_anime])
 
 
 def load_user_graph(user_file: str, anime_file: str) -> WeightedGraph:

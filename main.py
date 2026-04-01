@@ -46,9 +46,9 @@ if __name__ == "__main__":
     # g = user_graph.load_user_graph("data/profiles.csv", "data/animes.csv")
     # print(g.get_all_vertices())
     # print(g.recommend_anime(['Haikyuu!! Second Season', 'Shigatsu wa Kimi no Uso', 'Made in Abyss', 'Fullmetal Alchemist: Brotherhood', 'Kizumonogatari III: Reiketsu-hen'], 20, 50))
-    wg = user_rating_graph.load_user_graph("reviews_small.csv", "animes.csv")
-    ag = attribute_graph.load_the_graph("animes.csv")
+    wg = user_rating_graph.load_user_graph("data/reviews.csv", "data/animes.csv")
+    # ag = attribute_graph.load_the_graph("data/animes.csv")
 
-    print(wg.recommend_anime({'Haikyuu!! Second Season': 5, 'Shigatsu wa Kimi no Uso': 7, 'Made in Abyss': 6}, 15))
+    print(wg.recommend_anime_weighted({"Fullmetal Alchemist: Brotherhood": 10, "Steins;Gate": 9, "Shingeki no Kyojin": 8, "Death Note": 7, "One Punch Man": 6 },  100, 100))
     # print(wg.get_weight("OVERPOWERED99", "One Punch Man"))
     # print(wg.get_neighbours("One Punch Man"))

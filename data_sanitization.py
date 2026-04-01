@@ -2,7 +2,6 @@ from __future__ import annotations
 import csv
 from typing import Any
 import ast
-import pandas as pd
 
 
 def clean_anime(anime_file: str) -> list[dict[str, Any]]:
@@ -73,16 +72,18 @@ def get_anime_id_title_map(anime_file: str, user_map: dict[str, list[int]] | dic
                 anime = item
             anime_ids_from_user.add(anime)
 
-    df = pd.read_csv(anime_file)
     anime_map = {}
-    for _, row in df.iterrows():
-        try:
-            anime_id = int(row['uid'])
-            title = str(row['title'])
-        except ValueError:
-            continue
-        if anime_id not in anime_map and anime_id in anime_ids_from_user:
-            anime_map[anime_id] = title
+    with open(anime_file, mode='r', newline='', encoding="utf-8") as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            try:
+                anime_id = int(row[0])
+                title = row[1]
+            except ValueError:
+                continue
+            if anime_id not in anime_map and anime_id in anime_ids_from_user:
+                anime_map[anime_id] = title
     return anime_map
 
 
@@ -94,21 +95,23 @@ def clean_ratings(ratings_file: str) -> dict[str, list[tuple[int, int]]]:
     reviews required.
     """
     user_map = {}
-    USER_MINIMUM_REVIEWS = 3
-    df = pd.read_csv(ratings_file)
+    USER_MINIMUM_REVIEWS = 2
     user_anime_id = set()
-    for _, row in df.iterrows():
-        try:
-            user_id = str(row['profile'])
-            rating = int(row['score'])
-            anime_id = int(row['anime_uid'])
-        except ValueError:
-            continue
-        if (user_id, anime_id) not in user_anime_id:
-            if user_id not in user_map:
-                user_map[user_id] = []
-            user_map[user_id].append((anime_id, rating))
-            user_anime_id.add((user_id, anime_id))
+    with open (ratings_file, mode='r', newline='', encoding="utf-8") as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            try:
+                user_id = row[1]
+                rating = int(row[4])
+                anime_id = int(row[2])
+            except ValueError:
+                continue
+            if (user_id, anime_id) not in user_anime_id:
+                if user_id not in user_map:
+                    user_map[user_id] = []
+                user_map[user_id].append((anime_id, rating))
+                user_anime_id.add((user_id, anime_id))
     filtered_user_map = {}
     for user in user_map:
         if len(user_map[user]) >= USER_MINIMUM_REVIEWS:

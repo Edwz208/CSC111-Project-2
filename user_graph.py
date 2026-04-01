@@ -155,7 +155,7 @@ class Graph:
             return self._vertices[item1].similarity_score(self._vertices[item2])
         raise ValueError
 
-    def recommend_anime(self, inputted_anime: list[str], limit_anime: int, limit_users: int) -> dict[str, float]:
+    def recommend_anime(self, inputted_anime: list[str], limit_anime: int = 20, limit_users: int = 50) -> dict[str, float]:
         """Return a dict mapping recommended anime titles to their recommendation scores,
         in descending order of score, with at most <limit_anime> results.
 
@@ -193,13 +193,26 @@ class Graph:
         anime_to_score = {}
         top_anime.difference_update(set(inputted_anime))
         for anime in top_anime:
-            total_score = 0
+            total_score = 0.0
+            contributors = 0
             for user in self.get_neighbours(anime):
                 if user in top_users:
+                    contributors += 1
                     total_score += top_users[user]
             if total_score > 0:
-                anime_to_score[anime] = total_score
-        sorted_anime = sorted(anime_to_score.items(), key=lambda x: x[1], reverse=True)
+                anime_to_score[anime] = total_score * (contributors / (contributors + 1))
+        scores = list(anime_to_score.values())
+        min_score = min(scores)
+        max_score = max(scores)
+        normalized_scores = {}
+        for anime, score in anime_to_score.items():
+            if max_score == min_score:
+                normalized = 1.0
+            else:
+                normalized = (score - min_score) / (max_score - min_score)
+            normalized_scores[anime] = normalized
+
+        sorted_anime = sorted(normalized_scores.items(), key=lambda x: x[1], reverse=True)
         return {anime: score for anime, score in sorted_anime[:limit_anime]}
 
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
