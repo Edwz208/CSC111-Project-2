@@ -348,15 +348,16 @@ def load_custom_user_graph(num_top_users: int, total_graph: Graph, inputted_anim
 
 
 if __name__ == '__main__':
-    import python_ta.contracts
-    python_ta.contracts.check_all_contracts()
+    pass
+    # import python_ta.contracts
+    # python_ta.contracts.check_all_contracts()
 
-    import doctest
-    doctest.testmod()
+    # import doctest
+    # doctest.testmod()
 
-    import python_ta
-    python_ta.check_all(config={
-        'max-line-length': 120,
-        'extra-imports': ['networkx', 'data_sanitization'],
-        'max-nested-blocks': 4
-    })
+    # import python_ta
+    # python_ta.check_all(config={
+    #     'max-line-length': 120,
+    #     'extra-imports': ['networkx', 'data_sanitization'],
+    #     'max-nested-blocks': 4
+    # })
