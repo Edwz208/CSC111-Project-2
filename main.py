@@ -6,7 +6,7 @@ import user_rating_graph
 import attribute_graph
 
 
-def combined_recommendation(user_recs: dict[str, int], attribute_recs: dict[str, int], returned_limit) -> list[str]:
+def combined_recommendation(user_recs: dict[str, float], attribute_recs: dict[str, float], returned_limit) -> list[str]:
     """
     Return a final list of anime titles based on the user-based recommendation and attribute-based recommendation and
     combining them. The final list has a chosen number returned.
