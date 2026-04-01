@@ -215,6 +215,20 @@ class Graph:
         sorted_anime = sorted(normalized_scores.items(), key=lambda x: x[1], reverse=True)
         return {anime: score for anime, score in sorted_anime[:limit_anime]}
 
+    def top_users(self, inputted_anime: list[str], limit_users: int = 50) -> dict:
+        self.add_vertex("inputted_user", "user")
+        for anime in inputted_anime:
+            self.add_edge("inputted_user", anime)
+
+        neighbour_users_to_score = []
+        for user_id in self.get_all_vertices(kind='user'):
+            sim_score = self.get_similarity_score(user_id, "inputted_user")
+            if sim_score != 0 and user_id != "inputted_user":
+                neighbour_users_to_score.append((user_id, sim_score))
+        neighbour_users_to_score.sort(key=lambda x: x[1], reverse=True)
+        top_users = dict(neighbour_users_to_score[:limit_users])
+        return top_users
+
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
         """Convert this graph into a networkx Graph. Copied from CSC111 A3 handout.
 
@@ -274,6 +288,25 @@ def load_user_graph(user_file: str, anime_file: str) -> Graph:
 
     return g
 
+def load_custom_user_graph(user_file: str, anime_file: str, anime_list: list[str], top_users: dict) -> Graph:
+    g = Graph()
+    for anime in anime_list:
+        g.add_vertex(anime, 'anime')
+
+    user_map = data_sanitization.clean_profiles(user_file)
+    anime_map = data_sanitization.get_anime_id_title_map(anime_file, user_map)
+
+    for user in top_users:
+        g.add_vertex(user, 'user')
+        try:
+            user_list = {anime_map[anime] for anime in user_map[user]}
+            if user_list.intersection(set(anime_list)) != set():
+                for anime in user_list.intersection(set(anime_list)):
+                    g.add_edge(user, anime)
+        except KeyError:
+            continue
+
+    return g
 
 if __name__ == '__main__':
     import python_ta.contracts
