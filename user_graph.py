@@ -83,7 +83,8 @@ def _normalize_scores(anime_to_score: dict[str, float]) -> dict[str, float]:
 
 class Graph:
     """A graph used to represent a profile-anime network.
-    Structure copied from CSC111 A3, added/modified methods include add_input_user, recommend_anime, and to_networkx.
+    Structure copied from CSC111 A3, added/modified methods include add_input_user, get_top_similar_users, 
+    _get_candidate_anime, _score_candidate_anime, recommend_anime, and to_networkx.
 
     """
     # Private Instance Attributes:
