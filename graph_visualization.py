@@ -1,112 +1,57 @@
-from __future__ import annotations
-
-from user_graph import load_user_graph
-
-from PySide6.QtWidgets import*
-from PySide6.QtGui import QFont, QPixmap
-import sys
 import networkx as nx
-import matplotlib.pyplot as plt
+from plotly.graph_objs import Scatter, Figure
 
-
-class MainWindow(QMainWindow):
-    """The interactive text shell for the anime recommendation system.
+def output_graph(g: nx.Graph, graph_type: str) -> Figure:
+    """Outputs a visualization of a graph. Adapted from CSC111 A3
     """
+    user_colour = 'rgb(252, 128, 159)'
+    anime_colour = 'rgb(185, 10, 92)'
+    line_colour = 'rgb(255, 192, 222)'
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.setWindowTitle('AniRecs')
-        self.setGeometry(100, 100, 500, 400)
+    pos = getattr(nx, 'spring_layout')(g)
 
-        self._setup_ui()
-        self._setup_events()
+    x_values = [pos[k][0] for k in g.nodes]
+    y_values = [pos[k][1] for k in g.nodes]
+    labels = list(g.nodes)
 
-    def _setup_ui(self) -> None:
-        # container
-        self.central_widget = QWidget(self)
+    kinds = [g.nodes[k]['kind'] for k in g.nodes]
+    shapes = ['circle' if kind == graph_type else 'star' for kind in kinds]
+    colours = [user_colour if kind == graph_type else anime_colour for kind in kinds]
+    sizes = [5 if kind == graph_type else 10 for kind in kinds]
+    font_size = [8 if kind == graph_type else 12 for kind in kinds]
 
-        # layout
-        self.main_layout = QVBoxLayout()
+    x_edges = []
+    y_edges = []
+    for edge in g.edges:
+        x_edges += [pos[edge[0]][0], pos[edge[1]][0], None]
+        y_edges += [pos[edge[0]][1], pos[edge[1]][1], None]
 
-        # labels
-        self.title = QLabel('Anime Recommendations')
-        self.title.setStyleSheet('color: #FC809F')
-        self.title.setFont(QFont('Comic Sans MS', 32))
-        self.main_layout.addWidget(self.title)
+    trace3 = Scatter(x=x_edges,
+                     y=y_edges,
+                     mode='lines',
+                     name='edges',
+                     line=dict(color=line_colour, width=1),
+                     hoverinfo='none',
+                     )
+    trace4 = Scatter(x=x_values,
+                     y=y_values,
+                     mode='markers+text',
+                     textposition='bottom center',
+                     name='nodes',
+                     marker=dict(symbol=shapes,
+                                 size=sizes,
+                                 color=colours,
+                                 line=dict(color='rgb(50, 50, 50)', width=0.5)
+                                 ),
+                     text=labels,
+                     textfont_size= font_size,
+                     hovertemplate='%{text}',
+                     hoverlabel={'namelength': 0}
+                     )
 
-        self.instructions = QLabel('Enter a list of at least five anime to receive personalized recommendations!')
-        self.main_layout.addWidget(self.instructions)
-
-        # interactive form
-        self.form_layout = QFormLayout()
-        self.anime_list_input = QLineEdit()
-        self.form_layout.addRow('Your list:', self.anime_list_input)
-        self.btn_recommendations = QPushButton('Curate recommendations')
-        self.btn_clear = QPushButton('Clear')
-
-        self.main_layout.addLayout(self.form_layout)
-        self.main_layout.addWidget(self.btn_recommendations)
-        self.main_layout.addWidget(self.btn_clear)
-
-        self.central_widget.setLayout(self.main_layout)
-        self.setCentralWidget(self.central_widget)
-
-    def _setup_events(self) -> None:
-        self.btn_recommendations.clicked.connect(self.load_graph)
-        self.btn_clear.clicked.connect(self.clear_form)
-
-    def load_graph(self) -> None:
-
-        list_of_anime = self.anime_list_input.text().split(', ')
-
-        # HARD CODED VALUES FOR LIMITS RN
-        try:
-            # adds button to window
-            inputted_user_graph = load_user_graph('profiles.csv', 'animes.csv')
-            user_recs = inputted_user_graph.recommend_anime(list_of_anime, 50, 20)
-
-            for anime in user_recs:
-                user_recommendations = QLabel(anime)
-                user_recommendations.setFont(QFont('Helvetica', 8))
-                self.main_layout.addWidget(user_recommendations)
-
-            # visualize using networkx --> WILL MAKE BETTER LOOKING
-            g = inputted_user_graph.to_networkx(200)
-            nx.draw(g, with_labels=True, node_color='pink', edge_color='#FC809F', node_size=1200, font_size=12)
-            plt.savefig('data/graph.png')
-
-            btn_visualize = QPushButton('Visualize recommendations')
-            self.main_layout.addWidget(btn_visualize)
-            btn_visualize.clicked.connect(self._visualize)
-
-        except KeyError:
-            error_dialog = QErrorMessage()
-            error_dialog.showMessage('Your input was not accepted. Please try again.')
-            error_dialog.exec()
-
-        except ValueError:
-            error_dialog = QErrorMessage()
-            error_dialog.showMessage('Your input was not accepted. Please try again.')
-            error_dialog.exec()
-
-
-    def _visualize(self) -> None:
-        new_label = QLabel(self)
-        image = QPixmap('data/graph.png')
-        self.main_layout.addWidget(new_label)
-        new_label.setPixmap(image)
-
-    def clear_form(self) -> None:
-        self.anime_list_input.clear()
-
-def load_stylesheet(app: QApplication) -> None:
-    with open('data/style.qss', 'r') as file:
-        qss = file.read()
-        app.setStyleSheet(qss)
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    load_stylesheet(app)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+    data1 = [trace3, trace4]
+    fig = Figure(data=data1)
+    fig.update_layout({'showlegend': False})
+    fig.update_xaxes(showgrid=False, zeroline=False, visible=False)
+    fig.update_yaxes(showgrid=False, zeroline=False, visible=False)
+    return fig
