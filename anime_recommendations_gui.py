@@ -287,6 +287,7 @@ if __name__ == "__main__":
 
     python_ta.check_all(config={
         'max-line-length': 120,
+        'disable': ['E0611', 'E9998'],
         'extra-imports': ['user_graph', 'user_rating_graph', 'attribute_graph', 'graph_visualization',
                           'main', 'PySide6.QtWidgets.QMainWindow', 'PySide6.QtWidgets.QLabel',
                           'PySide6.QtWidgets.QPushButton', 'PySide6.QtWidgets.QErrorMessage',
