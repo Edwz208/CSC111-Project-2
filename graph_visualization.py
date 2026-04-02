@@ -1,8 +1,21 @@
+"""CSC111 Winter 2026 Project 2: Graph Visualization
+
+Module Description
+==================
+This module visualizes the user favourites, user ratings, and anime attributes graphs using networkx and plotly.
+It is adapted from a3_visualization.py from CSC111 Winter 2026 Assignment 3.
+
+This file is Copyright (c) 2026 Lily Annelise Canete-Goodine, Parmida Arab, Miray Ozdemir, Edwin Zeng
+"""
+from typing import Optional
 import networkx as nx
 from plotly.graph_objs import Scatter, Figure
 
-def output_graph(g: nx.Graph, graph_type: str) -> Figure:
-    """Outputs a visualization of a graph. Adapted from CSC111 A3
+
+def output_graph(g: nx.Graph, graph_type: str, weights: Optional[list], is_weighted: bool = False) -> Figure:
+    """Outputs a visualization of a graph. Adapted from CSC111 A3.
+    Preconditions
+    - isinstance(weights, list) if is_weighted
     """
     user_colour = 'rgb(252, 128, 159)'
     anime_colour = 'rgb(185, 10, 92)'
@@ -17,8 +30,12 @@ def output_graph(g: nx.Graph, graph_type: str) -> Figure:
     kinds = [g.nodes[k]['kind'] for k in g.nodes]
     shapes = ['circle' if kind == graph_type else 'star' for kind in kinds]
     colours = [user_colour if kind == graph_type else anime_colour for kind in kinds]
-    sizes = [5 if kind == graph_type else 10 for kind in kinds]
-    font_size = [8 if kind == graph_type else 12 for kind in kinds]
+    font_size = [8 if kind == graph_type else 10 for kind in kinds]
+
+    if isinstance(weights, list) and is_weighted:
+        sizes = [10 * x for x in weights]
+    else:
+        sizes = [5 if kind == graph_type else 10 for kind in kinds]
 
     x_edges = []
     y_edges = []
@@ -30,7 +47,7 @@ def output_graph(g: nx.Graph, graph_type: str) -> Figure:
                      y=y_edges,
                      mode='lines',
                      name='edges',
-                     line=dict(color=line_colour, width=1),
+                     line={'color': line_colour, 'width': 1},
                      hoverinfo='none',
                      )
     trace4 = Scatter(x=x_values,
@@ -38,13 +55,12 @@ def output_graph(g: nx.Graph, graph_type: str) -> Figure:
                      mode='markers+text',
                      textposition='bottom center',
                      name='nodes',
-                     marker=dict(symbol=shapes,
-                                 size=sizes,
-                                 color=colours,
-                                 line=dict(color='rgb(50, 50, 50)', width=0.5)
-                                 ),
+                     marker={'symbol': shapes,
+                             'size': sizes,
+                             'color': colours,
+                             'line': {'color': 'rgb(50, 50, 50)', 'width': 0.5}},
                      text=labels,
-                     textfont_size= font_size,
+                     textfont_size=font_size,
                      hovertemplate='%{text}',
                      hoverlabel={'namelength': 0}
                      )
@@ -55,3 +71,19 @@ def output_graph(g: nx.Graph, graph_type: str) -> Figure:
     fig.update_xaxes(showgrid=False, zeroline=False, visible=False)
     fig.update_yaxes(showgrid=False, zeroline=False, visible=False)
     return fig
+
+
+if __name__ == '__main__':
+
+    import python_ta.contracts
+    python_ta.contracts.check_all_contracts()
+
+    import doctest
+    doctest.testmod()
+
+    import python_ta
+    python_ta.check_all(config={
+        'max-line-length': 120,
+        'extra-imports': ['networkx', 'plotly.graph_objs'],
+        'max-nested-blocks': 4
+    })
