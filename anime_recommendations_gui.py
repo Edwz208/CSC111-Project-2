@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
         """Initializes the main window.
         """
         super().__init__()
-        self.setWindowTitle('AniRecs')
+        self.setWindowTitle('Recommendinator')
         self.setGeometry(100, 100, 500, 700)
         self._setup_ui()
 
