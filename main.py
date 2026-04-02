@@ -1,5 +1,13 @@
-"""
-Run this file to run the entire program from start to finish
+"""CSC111 Winter 2026 Project 2: Anime Recommendation System (User Reviews)
+
+Module Description
+==================
+This module runs the recommendation system.  It loads the attribute-based, unweighted and weighted user-rating graphs,
+combines their recommendations, and launches the graphical user interface.
+
+This file is Copyright (c) 2026 Lily Annelise Canete-Goodine, Miray Ozdemir, Parmida Arab, Edwin Zeng
+
+
 """
 import anime_recs_gui
 from user_rating_graph import WeightedGraph
@@ -32,15 +40,28 @@ def combined_recommendation(user_recs: dict[str, float], attribute_recs: dict[st
 
 
 def call_graphs_and_transform(attribute_graph: Graph, rating_graph: WeightedGraph,
-                               inputted_ratings: dict[str, int], limit: int) -> list[str]:
-    """Calls the respective recommendation functions for attribute_graph, passes the outcome to
-    combined_recommendation function
-    """
-    shows_user = list(inputted_ratings.keys())  # we are extracting titles given by user
-    attribute_based_graph = attribute_graph.recommend_new_show(shows_user, limit)
-    user_based_graph = rating_graph.recommend_anime_weighted(inputted_ratings, limit)
+                               inputted_ratings: dict[str, int], returned_limit: int) -> list[str]:
 
-    final_recs = combined_recommendation(user_based_graph, attribute_based_graph, limit)
+    """Return a recommendation list of up to <returned_limit> anime titles by calling both the attribute-based
+     and user-rating recommendation functions and combining their results.
+     The input anime titles are extracted from <inputted_ratings> and passed to the attribute graph,
+     and the ratings dictionary is passed to the weighted user-rating graph.
+     The results are combined using combined_recommendation().
+     If the combined result contains fewer than 3 titles,
+     the longer of the two individual recommendation lists is returned instead.
+
+    Preconditions:
+
+    - returned_limit >= 1
+    - all(anime in attribute_graph._vertices for anime in inputted_ratings)
+     - all(anime in rating_graph._vertices for anime in inputted_ratings)
+     """
+
+    shows_user = list(inputted_ratings.keys())  # we are extracting titles given by user
+    attribute_based_graph = attribute_graph.recommend_new_show(shows_user, returned_limit)
+    user_based_graph = rating_graph.recommend_anime_weighted(inputted_ratings, returned_limit)
+
+    final_recs = combined_recommendation(user_based_graph, attribute_based_graph, returned_limit)
     if len(final_recs) < 3:
         if len(user_based_graph) > len(attribute_based_graph):
             return list(user_based_graph.keys())
