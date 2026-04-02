@@ -303,7 +303,7 @@ def load_user_graph(user_file: str, anime_file: str) -> Graph:
         - user_file is the path to a CSV file corresponding to the user data
         - anime_file is the path to a CSV file corresponding to the anime data
 
-    >>> g = load_user_graph('profiles_small.csv', 'animes_small.csv')
+    >>> g = load_user_graph('data/profiles_small.csv', 'data/animes_small.csv')
     >>> len(g.get_all_vertices(kind='anime'))
     12
     >>> len(g.get_all_vertices(kind='user'))
