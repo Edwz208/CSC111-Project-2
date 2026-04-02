@@ -300,16 +300,16 @@ def load_custom_user_graph(num_top_users: int, total_graph: WeightedGraph, input
 
 
 if __name__ == '__main__':
-    pass
-    # import python_ta.contracts
-    # python_ta.contracts.check_all_contracts()
-    #
-    # import doctest
-    # doctest.testmod()
-    #
-    # import python_ta
-    # python_ta.check_all(config={
-    #     'max-line-length': 120,
-    #     'extra-imports': ['data_sanitization', 'user_graph'],
-    #     'max-nested-blocks': 4
-    # })
+
+    import python_ta.contracts
+    python_ta.contracts.check_all_contracts()
+
+    import doctest
+    doctest.testmod()
+
+    import python_ta
+    python_ta.check_all(config={
+        'max-line-length': 120,
+        'extra-imports': ['data_sanitization', 'user_graph'],
+        'max-nested-blocks': 4
+    })
