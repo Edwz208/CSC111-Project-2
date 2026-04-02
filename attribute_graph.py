@@ -426,7 +426,7 @@ if __name__ == '__main__':
 
     python_ta.check_all(config={
         'max-line-length': 120,
-        'extra-imports': ['csv', 'a3_part1', 'ast', 'networkx'],
+        'extra-imports': ['csv', 'ast', 'networkx'],
         'allowed-io': ['load_the_graph', 'Graph.get_all_attribute'],
         'max-nested-blocks': 4
     })
