@@ -124,16 +124,17 @@ class Graph:
             v1.neighbours.add(v2)
             v2.neighbours.add(v1)
 
-    def get_neighbours(self, item: Any) -> set:
-        """Return a set of the neighbours items of the given item.
+    def get_neighbours(self, item: Any) -> dict[str, str]:
+        """Return a dict of the neighbours items to their corresponding kind for the given item.
 
         Raise a ValueError if item does not appear as a vertex in this graph.
         """
         if item in self._vertices:
             v = self._vertices[item]
-            return {neighbour.item for neighbour in v.neighbours}
+            return {neighbour.item: neighbour.kind for neighbour in v.neighbours}
         else:
             raise ValueError
+
 
     def get_all_attribute(self, i: int, anime_data: str) -> set:
         """
@@ -237,6 +238,18 @@ class Graph:
             if lowered_input in each_show.lower():
                 return each_show
         return ""
+
+    def get_top_similar_anime(self, inputted_anime: str, limit_anime: int) -> list[str]:
+        """Return up to <limit_anime> top similar anime by similarity score"""
+        neighbour_anime_to_score = []
+        for anime_title in self.get_all_vertices(kind='title'):
+            if anime_title == inputted_anime:
+                continue
+            sim_score = self.get_similarity_score(anime_title, inputted_anime)
+            if sim_score != 0:
+                neighbour_anime_to_score.append((anime_title, sim_score))
+        neighbour_anime_to_score.sort(key=lambda x: x[1], reverse=True)
+        return list(score_pair[0] for score_pair in neighbour_anime_to_score[:limit_anime])
 
     def recommend_new_show(self, shows: list[str], limit_anime: int) -> dict[str, float]:
         """
@@ -379,6 +392,30 @@ def load_the_graph(anime_data: str) -> Graph:
         return show_attribute_graph
 
 
+def load_custom_attribute_graph(num_top_anime: int, total_graph: Graph,
+                                inputted_anime: list[str]) -> Graph:
+    """Return a graph containing the inputted anime, the most similar anime to each inputted anime, and
+    all attribute vertices adjacent to those anime.
+    """
+    g = Graph()
+    if not inputted_anime:
+        return g
+    anime_to_include = set()
+    title_vertices = total_graph.get_all_vertices(kind='title')
+    per_anime_limit = (num_top_anime // len(inputted_anime)) + 1
+    for anime in inputted_anime:
+        if anime in title_vertices:
+            anime_to_include.add(anime)
+            similar_anime = total_graph.get_top_similar_anime(anime, per_anime_limit)
+            anime_to_include.update(similar_anime)
+    for anime in anime_to_include:
+        for neighbour in total_graph.get_neighbours(anime):
+            neighbour_kind = total_graph.get_neighbours(anime)[neighbour]
+            g.add_vertex(neighbour, neighbour_kind)
+            g.add_edge(anime, neighbour)
+    return g
+
+
 if __name__ == '__main__':
 
     import doctest
@@ -401,6 +438,3 @@ if __name__ == '__main__':
             score_rounded = round(score, 2)
             print(f' {index}-) {title}, {score_rounded}')
             index += 1
-
-
-
