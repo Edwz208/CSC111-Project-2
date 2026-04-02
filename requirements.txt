@@ -1,0 +1,9 @@
+# CSC111 Winter 2026 Project 2: Python Libraries
+
+# Testing and code checking
+python_ta
+
+# Graphics and data visualization
+networkx
+plotly
+PySide6
