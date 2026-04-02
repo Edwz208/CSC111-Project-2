@@ -7,3 +7,4 @@ python_ta
 networkx
 plotly
 PySide6
+kaleido
