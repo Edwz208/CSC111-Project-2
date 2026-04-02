@@ -1,10 +1,8 @@
+"""CSC111 Project 2: Anime Recommendation System - Attribute Based Graph
 
-"""
-CSC111 Project 2: Anime Recommendation System - Attribute Based Graph
-
-This Python module is an anime recommendation system, using a graph that models
+This Python module is an anime recommendation system, using a graph that models the
 relationship of shows and their attributes like genre, popularity, and score;
-and Jaccard siimilarity to calculate the similarity between the anime shows.
+and Jaccard similarity to calculate the similarity between the anime shows.
 
 This file is Copyright (c) 2026 Miray Ozdemir, Lily Annelise Canete-Goodine, Parmida Arab, Edwin Zeng
 
@@ -12,6 +10,7 @@ This file is Copyright (c) 2026 Miray Ozdemir, Lily Annelise Canete-Goodine, Par
 
 from __future__ import annotations
 import csv
+import ast
 from typing import Any
 
 import networkx as nx
@@ -56,9 +55,9 @@ class _Vertex:
 
     def similarity_score(self, other: _Vertex) -> float:
         """This function returns the Jaccard similarity score between this and the given vertex in float type.
-        The similarity score gets calculated by the dividing the size of the intersection of the two vertex,
-         to their the size of union.The result will be a float between 0 and 1.
-        if either vertex does not have any neighbours, then the similarity score will be 0.
+        The similarity score gets calculated by calculating the ratio between the two vertices' intersection and union.
+        The result will be a float between 0 and 1.
+        If either vertex does not have any neighbours, then the similarity score will be 0.
 
         """
 
@@ -73,12 +72,13 @@ class _Vertex:
 
 
 class Graph:
-    """A graph used to represent show-attribute relationship.
+    """A graph used to represent show-attribute relationships.
     """
     # Private Instance Attributes:
     #     - _vertices:
     #         A collection of the vertices contained in this graph.
     #         Maps item to _Vertex object.
+
     _vertices: dict[Any, _Vertex]
 
     def __init__(self) -> None:
@@ -89,7 +89,7 @@ class Graph:
 
     def add_vertex(self, item: Any, kind: str) -> None:
         """Add a vertex with the given item and kind to this graph.
-        The initiazlized vertec has no neighburs. Do nothing if the given item is already existing this graph.
+        The initialized vertex has no neighbours. Do nothing if the given item is already existing this graph.
 
         Preconditions:
             - kind in {'title', 'genre', 'popularity', 'score'}
@@ -135,10 +135,10 @@ class Graph:
         else:
             raise ValueError
 
-
-    def get_all_attribute(self, i: int, anime_data: str) -> set:
+    @staticmethod
+    def get_all_attribute(i: int, anime_data: str) -> set:
         """
-        this function will collect all the attributes in given index in a set.
+        This function will collect all the attributes in given index in a set.
         Raise a ValueError if the given index i is out of bounds in csv rows.
 
                 - uid = row[0]
@@ -161,7 +161,7 @@ class Graph:
     def get_all_vertices(self, kind: str = '') -> set:
         """The function will return a set of all vertex items of the given kind.
 
-        If the kinf is not given, the function will return everything.
+        If the kind is not given, the function will return everything.
 
         Preconditions:
             - kind in {'title', 'genre', 'popularity', 'score'}
@@ -178,7 +178,7 @@ class Graph:
             return {v.item for v in self._vertices.values() if v.kind == kind}
 
     def to_networkx(self, max_vertices: int = 5000) -> nx.Graph:
-        """Convert this graph into a networkx Graph. Copied from CSC111 A3 handout.
+        """Converts this graph into a networkx Graph. Adapted from CSC111 A3 handout.
 
         max_vertices specifies the maximum number of vertices that can appear in the graph.
         (This is necessary to limit the visualization output for large graphs.)
@@ -200,7 +200,7 @@ class Graph:
     def get_similarity_score(self, item1: Any, item2: Any) -> float:
         """Return the Jaccard similarity score between the given items, item1 and item2, in this graph.
 
-        if the vertices item1 or item2 do not appear in this graph, Raise a ValueError .
+        If the vertices item1 or item2 do not appear in this graph, raise a ValueError .
 
 
         >>> le_graph = Graph()
@@ -253,11 +253,11 @@ class Graph:
 
     def recommend_new_show(self, shows: list[str], limit_anime: int) -> dict[str, float]:
         """
-        this function returns a dict of recommended shows, with a lenght of no more than "limit_anime",
+        This function returns a dict of recommended shows, with a length of no more than "limit_anime",
         sorted by the similarity scores. The recommendations are based on the jaccard similarity between
         a potential show and all inputted shows in "shows" list.Shows that are already in the inputted list
         is/are excluded from the final recommendations.
-        Dictionary goes from the show that has the highest similarity to lowest similarit,
+        Dictionary goes from the show that has the highest similarity to lowest similarity,
          and the output does not exceed the given limit.
 
         Preconditions:
@@ -274,10 +274,8 @@ class Graph:
                 closest_title = self.find_closes_title(show)
                 if closest_title != "":
                     corrected_shows.append(closest_title)
-                    print(f" umm... We couldn't find '{show}', did you possibly mean {closest_title} ")
                 else:
-                    print(f" '{show}' is not found, so we couldn't find any match... "
-                          f"but I prsonally recommend Frieren its a great anime !")
+                    raise ValueError
 
         all_shows = self.get_all_vertices(kind="title")
         for show in corrected_shows:
@@ -295,13 +293,10 @@ class Graph:
                 scores_so_far[the_show] = round(average, 2)
 
         scores_so_far = sorted(scores_so_far.items(), key=lambda x: x[1], reverse=True)
-        # scores_so_far.items() gave us all the key-value pairs as tuples
-        # for each tuple, we care about x[1] which is the score
-        # reverse=True -> highest value is first
 
         recommendation_dict = {}
-        for title, score in scores_so_far[:limit_anime]:
-            recommendation_dict[title] = score
+        for show_title, show_score in scores_so_far[:limit_anime]:
+            recommendation_dict[show_title] = show_score
 
         return recommendation_dict
 
@@ -321,7 +316,7 @@ def score_range_helper(score: float) -> str:
     elif score >= 7.0:
         return '7-8'
     elif score >= 6.0:
-        return '6-7'   #six seven
+        return '6-7'
     else:
         return '0-6'
 
@@ -375,7 +370,7 @@ def load_the_graph(anime_data: str) -> Graph:
             if len(row) >= 10 and row[9] != '':
                 uid = row[0]
                 title = row[1]
-                genres = row[3].split(',')
+                genres = ast.literal_eval(row[3])
                 popularity = popularity_range_helper(float(row[7]))
                 score = score_range_helper(float(row[9]))
                 shows[uid] = title
@@ -409,32 +404,30 @@ def load_custom_attribute_graph(num_top_anime: int, total_graph: Graph,
             similar_anime = total_graph.get_top_similar_anime(anime, per_anime_limit)
             anime_to_include.update(similar_anime)
     for anime in anime_to_include:
+        g.add_vertex(anime, 'title')
         for neighbour in total_graph.get_neighbours(anime):
             neighbour_kind = total_graph.get_neighbours(anime)[neighbour]
-            g.add_vertex(neighbour, neighbour_kind)
-            g.add_edge(anime, neighbour)
+            if neighbour_kind == 'genre':
+                g.add_vertex(neighbour, neighbour_kind)
+                g.add_edge(anime, neighbour)
     return g
 
 
 if __name__ == '__main__':
+    import python_ta.contracts
+
+    python_ta.contracts.check_all_contracts()
 
     import doctest
+
     doctest.testmod()
 
-    le_graph = load_the_graph('data/animes.csv')
+    import python_ta
 
-    titles = list(le_graph.get_all_vertices(kind="title"))
-    test_title = ["One Piece"]
-    #print(le_graph._vertices[test_title].neighbours)
-
-    recommendations = le_graph.recommend_new_show(test_title, 50)
-
-    if not recommendations:
-        print(f'Sorry you have a little bit too unique taste')
-    else:
-        index = 1
-        print(f'Hello Hello dear user, since you liked "{test_title}" you might also like:')
-        for title, score in recommendations.items():
-            score_rounded = round(score, 2)
-            print(f' {index}-) {title}, {score_rounded}')
-            index += 1
+    python_ta.check_all(config={
+        'max-line-length': 120,
+        'disable': ['static_type_checker'],
+        'extra-imports': ['csv', 'a3_part1', 'ast', 'networkx'],
+        'allowed-io': ['load_weighted_review_graph'],
+        'max-nested-blocks': 4
+    })
