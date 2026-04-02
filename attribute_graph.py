@@ -1,5 +1,7 @@
-"""CSC111 Project 2: Anime Recommendation System - Attribute Based Graph
+"""CSC111 Winter 2026 Project 2: Anime Recommendation System (Attribute Based Graph)
 
+Module Description
+==================
 This Python module is an anime recommendation system, using a graph that models the
 relationship of shows and their attributes like genre, popularity, and score;
 and Jaccard similarity to calculate the similarity between the anime shows.
@@ -426,8 +428,7 @@ if __name__ == '__main__':
 
     python_ta.check_all(config={
         'max-line-length': 120,
-        'disable': ['static_type_checker'],
-        'extra-imports': ['csv', 'a3_part1', 'ast', 'networkx'],
-        'allowed-io': ['load_weighted_review_graph'],
+        'extra-imports': ['csv', 'ast', 'networkx'],
+        'allowed-io': ['load_the_graph', 'Graph.get_all_attribute'],
         'max-nested-blocks': 4
     })
