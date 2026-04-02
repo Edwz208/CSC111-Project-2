@@ -303,7 +303,7 @@ def load_user_graph(user_file: str, anime_file: str) -> Graph:
         - user_file is the path to a CSV file corresponding to the user data
         - anime_file is the path to a CSV file corresponding to the anime data
 
-    >>> g = load_user_graph('data/profiles_small.csv', 'data/animes_small.csv')
+    >>> g = load_user_graph('profiles_small.csv', 'animes_small.csv')
     >>> len(g.get_all_vertices(kind='anime'))
     12
     >>> len(g.get_all_vertices(kind='user'))
@@ -349,16 +349,16 @@ def load_custom_user_graph(num_top_users: int, total_graph: Graph, inputted_anim
 
 
 if __name__ == '__main__':
-    pass
-    # import python_ta.contracts
-    # python_ta.contracts.check_all_contracts()
 
-    # import doctest
-    # doctest.testmod()
+    import python_ta.contracts
+    python_ta.contracts.check_all_contracts()
 
-    # import python_ta
-    # python_ta.check_all(config={
-    #     'max-line-length': 120,
-    #     'extra-imports': ['networkx', 'data_sanitization'],
-    #     'max-nested-blocks': 4
-    # })
+    import doctest
+    doctest.testmod()
+
+    import python_ta
+    python_ta.check_all(config={
+        'max-line-length': 120,
+        'extra-imports': ['networkx', 'data_sanitization'],
+        'max-nested-blocks': 4
+    })
