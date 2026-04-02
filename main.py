@@ -9,7 +9,7 @@ This file is Copyright (c) 2026 Lily Annelise Canete-Goodine, Miray Ozdemir, Par
 
 
 """
-import anime_recs_gui
+import anime_recommendations_gui
 from user_rating_graph import WeightedGraph
 from attribute_graph import Graph
 import sys
@@ -73,7 +73,7 @@ def call_graphs_and_transform(attribute_graph: Graph, rating_graph: WeightedGrap
 
 if __name__ == "__main__":
     text_shell = QApplication(sys.argv)
-    anime_recs_gui.load_stylesheet(text_shell)
-    window = anime_recs_gui.MainWindow()
+    window = anime_recommendations_gui.MainWindow()
+    window.load_stylesheet(text_shell)
     window.show()
     sys.exit(text_shell.exec())
